@@ -1,0 +1,19 @@
+Event Bus
+Events can be registered for various, pre-defined triggers
+It is the responsibility of the fired event to further distinguish if it should fire
+Eg. a effect that fires on playing an event will register an onPlayCard and then when it is called will check to see if the card played was an event.
+
+To register an event, the card script must call registerEvent and pass the card's id and the event type
+  >>> registerEvent(card, eventType)
+
+when an event is fired, each event of that type is read and executed in the following manner:
+  the entire event bus is traversed and any events matching the event type are noted
+  noted events of the priority player are fired first, in the order that they were registered
+  noted events of the non-priority player are then fired, in the order that they were registered
+    before firing each event, the program first confirms that the event to be fired still exists in the event bus
+
+events are fired by executing the registered cards "Event" attribute
+several bits of information are passed using the args parameter, depending on the event type, including the event type itself.
+
+When an event is no longer active, it must be removed immediately by calling removeEvent passing the card id and the event type. This is important to do to ensure that event chains are properly terminated and so that events are not fired illegally.
+  >>> removeEvent(card, eventType)
