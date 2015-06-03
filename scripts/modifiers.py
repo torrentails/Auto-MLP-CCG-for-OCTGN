@@ -1,7 +1,6 @@
 modifiers = {}
 delayedModifiers = []
 
-#TODO: Find out why Cloudchaser's effect wasn't applied twice
 def applyModifiers(modifier_type, args_dict):
     args_dict['changed'] = False
     if modifier_type in modifiers:
@@ -23,6 +22,7 @@ class Modifier():
         self._cnd = activate_condition
         self._act = action
         self._ree = removal_event
+        self._rei = []
         self._rec = removal_condition
         self._rev = reversal
         self._oth = otherData
@@ -37,9 +37,9 @@ class Modifier():
         if self._ree:
             if type(self._ree) == list:
                 for e in self._ree:
-                    registerEvent(self, e, self.remove)
+                    self._rei.append(registerEvent(e, self.remove))
             else:
-                registerEvent(self, self._ree, self.remove)
+                self._rei.append(registerEvent(self._ree, self.remove))
         return(self)
     def check(self, args):
         if not self._ena: return False
@@ -69,10 +69,8 @@ class Modifier():
     def delete(self):
         try:
             modifiers[self._typ].remove(self)
-            if type(self._ree) == list:
-                for e in self._ree:
-                    removeEvent(self, e)
-            else: removeEvent(self, self._ree)
+            for id in self._rei:
+                removeEvent(id)
         except: return
     def remove(self, args):
         if self.check_remove(args): self.delete()

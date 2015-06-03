@@ -76,7 +76,7 @@ class Enum(object):
 # Script loading and dispatcher functions
 #-----------------------------------------------------------------------
     
-def excecute(card, effectType, a={}):
+def excecute(card, effectType, a={}, retVal=True):
     if   effectType == dispatch.onGameLoad:    e = OnGameLoad(card)
     elif effectType == dispatch.activatedList: e = ActivatedList(card)
     elif effectType == dispatch.activated:     e = Activated(card)
@@ -93,7 +93,6 @@ def excecute(card, effectType, a={}):
     elif effectType == dispatch.confronted:    e = Confronted(card)
     elif effectType == dispatch.replaced:      e = Replaced(card)
     
-    retVal = True
     if e == "": return retVal
     whiteSpace = -1
     while e[0] == ' ':
@@ -201,8 +200,15 @@ def canExhaust(card):
         return isReady(card) and inPlay(card)
     except: return False
     
+def exhaust(card):
+    mute()
+    if canExhaust(card):
+        card.orientation = Rot90
+    
 def isCharacter(card):
-    return Type(card) == cardType.friend or Type(card) == cardType.maneCharacter
+    if Type(card) == cardType.friend or Type(card) == cardType.maneCharacter:
+        return cardType.character
+    else: return False
     
 def draw(ammount=1, note=True):
     mute()

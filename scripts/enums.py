@@ -16,7 +16,7 @@ event = Enum('Event', l)
 modifier = Enum('modifier', ['cost', 'power', 'color'])
 
 #Card types
-cardType = Enum('cardType', ['Mane Character', 'Friend', 'Event', 'Resource', 'Troublemaker', 'Problem', 'Strife', 'Quest'])
+cardType = Enum('cardType', ['Character', 'Mane Character', 'Friend', 'Event', 'Resource', 'Troublemaker', 'Problem', 'Strife', 'Quest'])
 
 #Card traits
 trait = Enum('trait', ['Earth Pony', 'Unicorn', 'Pegasus', 'Alicorn', 'Ally', 'Breezie', 'Buffalo', 'Changeling', 'Critter', 'Crystal', 'Donkey', 'Draconequus', 'Dragon', 'Griffon', 'Zebra', 'Ahuizotl', 'Cow', 'Chaotic', 'Elder', 'Foal', 'Minotaur', 'Performer', 'Rock', 'Royalty', 'Sea Serpent', 'Tree', 'Accessory', 'Armor', 'Artifact', 'Asset', 'Condition', 'Location', 'Report', 'Mailbox', 'Unique', 'Gotcha', 'Showdown', 'Epic'])

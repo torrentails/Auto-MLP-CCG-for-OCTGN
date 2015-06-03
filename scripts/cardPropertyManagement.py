@@ -11,8 +11,10 @@ cardDefaults = {}
 
 def initializeCardDefaults(cardList):
     for card in cardList: writeDefaults(card)
+    
 
 def writeDefaults(card):
+    card.isFaceUp = True
     cardDefaults[card._id] = [{},{}]
     d = cardDefaults[card._id][0]
     d["Title"] = card.name#.replace(' ','')
@@ -82,6 +84,7 @@ def writeDefaults(card):
         a["Uncovered"] = card.alternateProperty(alt,'Uncovered')
         a["Confront"] = card.alternateProperty(alt,'Confront')
         a["Replaced"] = card.alternateProperty(alt,'Replaced')
+    card.isFaceUp = False
         
 
 def updateDefaults(overideList):

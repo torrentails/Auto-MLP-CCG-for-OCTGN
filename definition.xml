@@ -16,6 +16,7 @@
     usetwosidedtable="True">
 
   <scripts>
+    <script src="scripts/uuid.py" />
     <script src="scripts/utilities.py" />
     <script src="scripts/enums.py" />
     <script src="scripts/markers.py" />
@@ -93,24 +94,21 @@
 
   <table name="Table" visibility="undefined" ordered="False" width="1280" height="720" board="images/bg.png" background="images/bg.png" backgroundStyle="uniformToFill">
   
-    <cardaction menu="Activate" shortcut="CTRL+SPACE" default="True" execute="activate" />
-    <groupaction menu="End main phase" shortcut="tab" execute="endMainPhase" />
-    <groupaction menu="Declare response" shortcut="CTRL+SHIFT+SPACE" execute="declareResponse" />
+    <cardaction menu="Activate" shortcut="SPACE" default="True" execute="activate" />
+    <groupaction menu="End phase" shortcut="tab" execute="endPhase" />
+    <groupaction menu="Declare response" shortcut="CTRL+SPACE" execute="declareResponse" />
     <groupaction menu="Cancel playing card" shortcut="ESC" execute="cancelPlayingCard" />
     <groupaction menu="Draw a card" shortcut="CTRL+D" execute="payToDraw" />
     <groupaction menu="Surrender" shortcut="CTRL+SHIFT+S" execute="surrender" />
-
-    <!--<cardaction menu="Activate" shortcut="SPACE" default="True" execute="activate" />-->
-    <cardaction menu="Move a character" shortcut="CTRL+M" execute="moveCharacter" />
     <cardaction menu="Rally frightened friend" shortcut="CTRL+R" execute="rally" />
   </table>
 
-  <player summary="Hand: {#Hand} / Points: {#Points} / AT: {#AT}">
+  <player summary="Points: {#Points} / AT: {#AT} / Hand: {#Hand} / Deck: {#Deck}">
     <counter name="Points" default="0" icon="images/Points.png"  />
     <counter name="AT" default="0" icon="images/AT.png" />
 
     <hand name="Hand" visibility="me" ordered="False" width="84" height="117" icon="images/placeholder.png">
-      <cardaction menu="Play Card" shortcut="SPACE" execute="tryPlayCard" />
+      <cardaction menu="Play Card" shortcut="SPACE" default="True" execute="tryPlayCard" />
     </hand>
 
     <group name="Deck" visibility="none" width="84" height="117" icon="images/placeholder.png">

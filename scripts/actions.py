@@ -21,11 +21,10 @@ def activate(card, x = 0, y = 0):
     if eval(getGlobalVariable('playingCard_player')) == me._id:
         playCard(location.home)
         return
-    lst = excecute(card, dispatch.activatedList)
-    if lst != False or lst != None:
+    lst = excecute(card, dispatch.activatedList, retVal=False)
+    if lst != False and lst != None:
         if lst == True or len(lst) == 1:
-            msg = excecute(card, dispatch.activated, {'effect':1})
-            if msg == True: msg = ''
+            msg = excecute(card, dispatch.activated, {'effect':1}, retVal='')
             notifyAll(infoColor, "{} activates the effect of {}".format(me, card)+msg)
         elif len(lst) > 1:
             colorsList = []
@@ -36,23 +35,22 @@ def activate(card, x = 0, y = 0):
                 else: colorsList.append('#000000')
             choice = askChoice("Activate an effect of {}".format(card), lst, colorsList, customButtons = ["Cancel"])
             if choice == -1: return
-            msg = excecute(card, dispatch.activated, {'effect':choice})
-            if msg == True: msg = ''
+            msg = excecute(card, dispatch.activated, {'effect':choice}, retVal='')
             notifyAll(infoColor, "{} activates the {} effect of {}".format(me, lst[choice], card)+msg)
     
 def onClickCard(card, x = 0, y = 0):
     if eval(getGlobalVariable('playingCard_player')) == me._id:
-        if card.group == table:
+        if inPlay(card):
             playCard(getLocation(card))
-            return
+        return
     if fireEvent(event.preClickCard, card=card, doubleClick=False) == True: return
     fireEvent(event.clickCard, card=card, doubleClick=False)
 
 def onDoubleClick(card, x = 0, y = 0):
     if eval(getGlobalVariable('playingCard_player')) == me._id:
-        if card.group == table:
+        if inPlay(card):
             playCard(getLocation(card))
-            return
+        return
     if fireEvent(event.preClickCard, card=card, doubleClick=True) == True: return
     fireEvent(event.clickCard, card=card, doubleClick=True)
     activate(card, x, y)
@@ -71,26 +69,34 @@ def onMoveCards(player, cards, fromGroups, toGroups, oldZs, z, oldXs, oldYs, x, 
 #Called whenever a card is moved.
 def onMoveCard(player, card, fromGroup, toGroup, oldZ, z, oldX, oldY, x, y, manualMove, highlight, markers=None):
     mute()
-    if devMode:
+    if not devMode:
         whisper("x:{} y:{}".format(x,y))
         return
     if manualMove == True:
         if fromGroup != toGroup:
             notifyAll(errorColor, "WARNING: {} manually moved {} from {} to {}. The script handles most everything, so please be sure that's what you wanted to do.".format(me, card, fromGroup.name, toGroup.name))
-        elif fromGroup == table and toGroup == table:
+            return
+        if fromGroup == table and toGroup == table:
             newLoc = getLocationFromCords(card)
-            if getLocation(card) != newLoc:
-                if isCharacter(card):
-                    if me.counters['AT'].value >= 2:
-                        notifyAll(infoColor, "{} moves {} to {} for 2 AT.".format(me,card,newLoc.name))
-                        me.counters['AT'].value -= 2
-                        setLocation(card, newLoc)
-                    else:
-                        whisperBar(warnColor, "Not enough AT to move {}.".format(card))
-                        organizeZone(getLocation(card))
+            oldLoc = getLocation(card)
+            if oldLoc == newLoc:
+                repositionCard(card, newLoc)
+                return
+            if isCharacter(card):
+                cost = 2
+                #cost = applyModifiers(modifier.movementCost, {'card':card, 'oldLoc':oldLoc, 'newLoc':newLoc, 'cost': cost})
+                if me.counters['AT'].value >= cost:
+                    #fireEvent(preEvent.moveCard, card=card, oldLoc=oldLoc, newLoc=newLoc, cost=cost)
+                    me.counters['AT'].value -= cost
+                    setLocation(card, newLoc)
+                    notifyAll(infoColor, "{} moves {} to {} for {} AT.".format(me,card,newLoc.name,cost))
+                    #fireEvent(event.moveCard, card=card, oldLoc=oldLoc, newLoc=newLoc, cost=cost)
                 else:
-                    whisperBar(errorColor, "Can't move non-characters.")
+                    whisperBar(warnColor, "Not enough AT to move {}.".format(card))
                     organizeZone(getLocation(card))
+            else:
+                whisperBar(errorColor, "Can't move non-characters.")
+                organizeZone(getLocation(card))
 
 #TODO: rewrite for priority.
 def declareResponse(group, x = 0, y = 0):
@@ -98,7 +104,7 @@ def declareResponse(group, x = 0, y = 0):
     
 def surrender(group, x=0, y=0):
     mute()
-    if not confirm("Are you sure you want to surrender?"): return
+    if not confirm("Are you sure you want to concede the game?"): return
     for loc in locations:
         for card in loc:
             if card.owner == me:
@@ -168,8 +174,7 @@ def playCard(loc=location.home):
     moveToLocation(card, loc, trigger=False)
     setGlobalVariable('playingCard_player', 'None')
     dict = {'played':True, 'cleanup':True}
-    msg = excecute(card, dispatch.entersPlay, dict)
-    if msg == True: msg = ''
+    msg = excecute(card, dispatch.entersPlay, dict, retVal='')
     if dict['cleanup']: playCardCleanup(card, cost, loc, True, message=msg)
 
 def playCardCleanup(card=None, cost=None, loc=location.home, played=True, message=''):
@@ -188,6 +193,9 @@ def playCardCleanup(card=None, cost=None, loc=location.home, played=True, messag
     
 def payToDraw(group, x=0, y=0):
     mute()
+    whisper("group {}".format(group.name))
     if len(me.deck) == 0: whisperBar(warnColor, "You don't have any cards in your {} to draw.".format(group.name))
     elif me.counters['AT'].value == 0: whisperBar(warnColor, "You don't have enough action tokens to draw a card.")
-    else: draw()
+    else:
+        me.counters['AT'].value -= 1
+        draw()

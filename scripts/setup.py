@@ -25,14 +25,16 @@ def onDeckLoadSetup(player, groups):
         for card in group:
             if card.owner == me: cardList.append(card)
     if not devMode:
-        if not verifyDeck(cardList): return #Verify that the deck loaded is a valid deck
+        #Verify that the deck loaded is a valid deck
+        if not verifyDeck(cardList): return
         #Ensure that there is another player present
         while len(players) <= 1:
             time.sleep(0.5)
             whisper("waiting for another player to join.")
     initializeCardDefaults(cardList) #Read and parse each card's data
     me.counters['Points'].value = 0
-    me.counters['AT'].value = 0
+    if devMode: me.counters['AT'].value = 30
+    else: me.counters['AT'].value = 0
     setupDeck(cardList)
     
     me.setGlobalVariable('deckLoaded', 'True')
@@ -60,12 +62,18 @@ def onDeckLoadSetup(player, groups):
     
     
 def verifyDeck(cardList):
+    mute()
     noOfCards = 0
     noOfProblems = 0
     noOfStartProblems = 0
     noOfManes = 0
     cardNameListDeck = []
     cardNameListProblem = []
+    peekList = []
+    for card in cardList:
+        if not card.isFaceUp:
+            card.isFaceUp = True
+            peekList.append(card)
     for card in cardList:
         cn = card.name
         if card.subtitle != '': cn += ', '+card.subtitle
@@ -96,7 +104,9 @@ def verifyDeck(cardList):
                 whisperBar(errorColor, "Too many of {} found. Please load a valid deck".format(cardName))
                 errorFound = True
                 break
-        if not errorFound: return True
+        if not errorFound:
+            for c in peekList: c.isFaceUp = False
+            return True
     
     for card in cardList:
         card.delete()

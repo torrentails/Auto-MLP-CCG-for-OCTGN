@@ -2878,10 +2878,10 @@
                 if d['card'] != d['modifier']['card']: return False;
               return True;
             Modifier([modifier.power, modifier.color], cond, act, [event.endOfPhase, event.leavePlay], rem_cond, card=c);
-            removeEvent(d['self'], event.preClickCard);
             d['canceled'] = True;
             playCardCleanup(message=', targeting {}'.format(c));
-      registerEvent(a['card'], event.preClickCard, func);
+            return True;
+      registerEvent(event.preClickCard, func, runOnce=True);
       a['cleanup'] = False"/>
       <property name="LeavesPlay" value=""/>
       <property name="Flipped" value=""/>
@@ -3487,7 +3487,8 @@
           Modifier([modifier.power, modifier.color], cond, act, True, [event.endTurn, event.leavePlay], rem_cond, card=c);
           d['canceled'] = True;
           playCardCleanup(message=', targeting {}'.format(c));
-      registerEvent(a['card'], event.preClickCard, func);
+          return True;
+      registerEvent(event.preClickCard, func, runOnce=True);
       a['cleanup'] = False"/>
       <property name="LeavesPlay" value=""/>
       <property name="Flipped" value=""/>
