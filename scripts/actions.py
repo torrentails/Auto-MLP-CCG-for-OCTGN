@@ -6,6 +6,7 @@ import time
 #-----------------------------------------------------------------------
 
 def cancelPlayingCard(group, x = 0, y = 0):
+    """This action is called when the user presses the Esc key on their keyboard and is used to cancel playing a card."""
     if eval(getGlobalVariable('playingCard_player')) == me._id:
         setGlobalVariable('playingCard_player', 'None')
         card = Card(eval(getGlobalVariable('playingCard_card')))
@@ -13,11 +14,13 @@ def cancelPlayingCard(group, x = 0, y = 0):
         return
 
 def tableActivate(group, x = 0, y = 0):
+    """The primary action of the game, called by pressing the Space bar. The function will first check if a card being played is awaiting selection and, if so, will play the card to home; else function checks for priority and checks for and activates the card's effect."""
     if eval(getGlobalVariable('playingCard_player')) == me._id:
         playCard(location.home)
         return
 
 def activate(card, x = 0, y = 0):
+    """Called when a card is clicked once. It will check if an action or a card being played is awaiting selection and, if so, will select the card/play the card being played to the clicked card's location. If not, then event.preClickCard and event.clickCard are fired."""
     if eval(getGlobalVariable('playingCard_player')) == me._id:
         playCard(location.home)
         return
@@ -39,6 +42,7 @@ def activate(card, x = 0, y = 0):
             notifyAll(infoColor, "{} activates the {} effect of {}".format(me, lst[choice], card)+msg)
     
 def onClickCard(card, x = 0, y = 0):
+    """Called when a card is clicked once. It will check if an action or a card being played is awaiting selection and, if so, will select the card/play the card being played to the clicked card's location. If not, then event.preClickCard and event.clickCard are fired. Finally, if it is not cancelled by event.preClickCard, the function will make a call to activate."""
     if eval(getGlobalVariable('playingCard_player')) == me._id:
         if inPlay(card):
             playCard(getLocation(card))
@@ -47,6 +51,7 @@ def onClickCard(card, x = 0, y = 0):
     fireEvent(event.clickCard, card=card, doubleClick=False)
 
 def onDoubleClick(card, x = 0, y = 0):
+    """Called when a card is clicked once. It will check if an action or a card being played is awaiting selection and, if so, will select the card/play the card being played to the clicked card's location. If not, then event.preClickCard and event.clickCard are fired. Finally, if it is not cancelled by event.preClickCard, the function will make a call to activate."""
     if eval(getGlobalVariable('playingCard_player')) == me._id:
         if inPlay(card):
             playCard(getLocation(card))
@@ -68,6 +73,7 @@ def onMoveCards(player, cards, fromGroups, toGroups, oldZs, z, oldXs, oldYs, x, 
 
 #Called whenever a card is moved.
 def onMoveCard(player, card, fromGroup, toGroup, oldZ, z, oldX, oldY, x, y, manualMove, highlight, markers=None):
+    """Not called by a user input but by the OnMoveCard event when a user manually moves a card. The function will warn all players if the movement was between groups. Assuming the movement was on the table, it check to see if it was moved to a different zone; if not, then the zone it is in is rearranged, otherwise it performs validation to see if the movement is allowed and removes the appropriate AT while notifying all players of the move."""
     mute()
     if not devMode:
         whisper("x:{} y:{}".format(x,y))
@@ -100,9 +106,11 @@ def onMoveCard(player, card, fromGroup, toGroup, oldZ, z, oldX, oldY, x, y, manu
 
 #TODO: rewrite for priority.
 def declareResponse(group, x = 0, y = 0):
+    """Called by pressing CTRL+SPACE, this will eventually freeze the game state to allow the calling player to take action; for now it only notifies all players."""
     notifyAll(queryColor, "{} wishes to respond.".format(me))
     
 def surrender(group, x=0, y=0):
+    """Called by pressing CTRL+SHIFT+S; it will put up a dialogue box, confirming that the player wishes to surrender. If the press 'yes' it will end the game in their opponents victory and clean up the board."""
     mute()
     if not confirm("Are you sure you want to concede the game?"): return
     for loc in locations:
@@ -121,6 +129,8 @@ def surrender(group, x=0, y=0):
 
 #Called when a card is played.
 def tryPlayCard(card, x = 0, y = 0):
+    """Called by pressing space on or double clicking a card in hand; this will run through various validations before finally enabling the player to play the card.
+    NOTE: Eventually double clicking a card will prioritize activating the effect of a card in hand before trying to play it, such as if a card can discard itself to activate an effect or something similar. Players should be encouraged to press Space bar to play cards."""
     mute()
     if eval(getGlobalVariable('playingCard_player')) == me._id:
         playCard(location.home)
@@ -150,7 +160,7 @@ def tryPlayCard(card, x = 0, y = 0):
     if typ == cardType.troublemaker:
         me.counters['AT'].value -= cost
         card.moveToTable(x, y, True)
-        notifyAll('#333333', "{} plays a facedown troublemaker.".format(me))
+        notifyAll(infoColor, "{} plays a facedown troublemaker.".format(me))
     
     else:
         setGlobalVariable('playingCard_player', str(me._id))
@@ -164,6 +174,7 @@ def tryPlayCard(card, x = 0, y = 0):
             whisperBar(infoColor, "Playing {}: Click the problem you want to play it to, or press 'Space' to play to home. 'Esc' to cancel.".format(card))
 
 def playCard(loc=location.home):
+    """Called to actually play the card; for events this means straight away, for other card types, it is called when the selection of location has been made."""
     mute()
     card = Card(eval(getGlobalVariable('playingCard_card')))
     tpy = Type(card)
@@ -178,6 +189,7 @@ def playCard(loc=location.home):
     if dict['cleanup']: playCardCleanup(card, cost, loc, True, message=msg)
 
 def playCardCleanup(card=None, cost=None, loc=location.home, played=True, message=''):
+    """Called when a card is finished playing. This can be delayed by card scripting if necessary, as is often the case with events that need to target another card."""
     if card == None: card = Card(eval(getGlobalVariable('playingCard_card')))
     if cost == None: cost = eval(getGlobalVariable('playingCard_cost'))
     if Type(card) == cardType.Event: notifyAll('#333333', "{} plays {} for {} AT".format(me,card,cost)+message)
@@ -192,6 +204,7 @@ def playCardCleanup(card=None, cost=None, loc=location.home, played=True, messag
 #-----------------------------------------------------------------------
     
 def payToDraw(group, x=0, y=0):
+    """Called by pressing CTRL+D or by double clicking the deck. This will check for and deduct an action token to draw a card."""
     mute()
     whisper("group {}".format(group.name))
     if len(me.deck) == 0: whisperBar(warnColor, "You don't have any cards in your {} to draw.".format(group.name))

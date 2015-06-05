@@ -1,6 +1,7 @@
 #Dispatcher
 dispatch = Enum('dispatch', ['onGameLoad', 'activatedList', 'activated', 'checkPlay', 'prePlayCard', 'entersPlay', 'leavesPlay', 'flipped', 'moved', 'uncovered', 'confronted', 'replaced'])
 
+#TODO: change to preEvent and event
 #Event types
 phases = ['Start of Phase', 'End of Phase', 'Start Turn', 'End Turn', 'Ready Phase', 'Draw Phase', 'Troublemaker Phase', 'Main Phase', 'Score Phase', 'End Phase'] 
 pre = ['Play Card', 'Click Card', 'Activate Effect', 'Leave Play']
@@ -14,6 +15,9 @@ event = Enum('Event', l)
 
 #Modifier types
 modifier = Enum('modifier', ['cost', 'power', 'color'])
+
+#Card Properties
+property = Enum('property', ['Title', 'Subtitle', 'Number', 'Type', 'Traits', 'Colors', 'Power', 'Cost', 'Play Requirements', 'Keywords', 'Text', 'Bonus Points', 'Your Requirements', 'Opponents Requirements', 'Rarity', 'On Game Load', 'Activated List', 'Activated', 'Check Play', 'Pre Play Card', 'Enters Play', 'Leaves Play', 'Flipped', 'Moved', 'Uncovered', 'Confront', 'Replaced'])
 
 #Card types
 cardType = Enum('cardType', ['Character', 'Mane Character', 'Friend', 'Event', 'Resource', 'Troublemaker', 'Problem', 'Strife', 'Quest'])

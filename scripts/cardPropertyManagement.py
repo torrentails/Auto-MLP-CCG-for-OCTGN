@@ -17,10 +17,8 @@ def writeDefaults(card):
     card.isFaceUp = True
     cardDefaults[card._id] = [{},{}]
     d = cardDefaults[card._id][0]
-    d["Title"] = card.name#.replace(' ','')
-    d["Subtitle"] = card.Subtitle#.replace(' ','')
-    d["Name"] = d["Title"]
-    if d["Subtitle"] != '': d["Name"] = d["Name"] + ', ' + d["Subtitle"]
+    d["Title"] = card.name
+    d["Subtitle"] = card.Subtitle
     d["Number"] = card.Number.replace(' ','')
     d["Type"] = cardType[card.Type.replace(' ','')]
     d["Traits"] = parseDefaultTraits(card.Traits)
@@ -52,10 +50,8 @@ def writeDefaults(card):
     if card.Type == "Mane Character":
         alt = "Mane Character Boosted"
         a = cardDefaults[card._id][1]
-        a["Title"] = card.alternateProperty(alt,'Name')#.replace(' ','')
-        a["Subtitle"] = card.alternateProperty(alt,'Subtitle')#.replace(' ','')
-        a["Name"] = a["Title"]
-        if a["Subtitle"] != '': a["Name"] = a["Name"] + ', ' + a["Subtitle"]
+        a["Title"] = card.alternateProperty(alt,'Name')
+        a["Subtitle"] = card.alternateProperty(alt,'Subtitle')
         a["Number"] = card.alternateProperty(alt,'Number').replace(' ','')
         a["Type"] = cardType[card.Type.replace(' ','')]
         a["Traits"] = parseDefaultTraits(card.alternateProperty(alt,'Traits'))
@@ -166,8 +162,15 @@ def parseDefaultDict(string):
             lst.append([l[n].replace(' ',''),l[n-1]])
     return lst
 
+#-----------------------------------------------------------------------
+# Read card defaults
+#-----------------------------------------------------------------------
+
 def default_name(card):
-    return cardDefaults[card._id][int(isBoosted(card))]['Name']
+    name = cardDefaults[card._id][int(isBoosted(card))]['Title']
+    sub = cardDefaults[card._id][int(isBoosted(card))]['Subtitle']
+    if sub != '': name = name + ', ' + sub
+    return name
     
 def default_title(card):
     return cardDefaults[card._id][int(isBoosted(card))]['Title']
@@ -249,13 +252,13 @@ def default_confront(card):
         
 def default_replaced(card):
     return cardDefaults[card._id][int(isBoosted(card))]['Replaced']
-        
+
 #-----------------------------------------------------------------------
 # Card property override system
 #-----------------------------------------------------------------------
 
 #TODO: mostly depreciated by the modifiers system. May remove in the near future
-
+'''
 #Dictionary of cards with overwritten properties
 cardOverideDict = {}
 
@@ -278,87 +281,225 @@ def override(card, prop, val=None):
         return cardOverideDict[card._id][i][prop]
     else:
         return None
-
-def Name(card, val=None):
-    return override(card, 'Name', val) or default_name(card)
-
-def Title(card, val=None):
-    return override(card, 'Title', val) or default_title(card)
-        
-def Subtitle(card, val=None):
-    return override(card, 'Subtitle', val) or default_subtitle(card)
-        
-def Number(card, val=None):
-    return override(card, 'Number', val) or default_number(card)
-        
-def Type(card, val=None):
-    return override(card, 'Type', val) or default_type(card)
-        
-def Traits(card, val=None):
-    return override(card, 'Traits', val) or default_traits(card)
-        
-def Colors(card, val=None):
-    return override(card, 'Colors', val) or default_colors(card)
-        
-def Power(card, val=None):
-    return override(card, 'Power', val) or default_power(card)
-        
-def Cost(card, val=None):
-    return override(card, 'Cost', val) or default_cost(card)
-        
-def PlayRequirements(card, val=None):
-    return override(card, 'PlayRequirements', val) or default_play_requirements(card)
-        
-def Keywords(card, val=None):
-    return override(card, 'Keywords', val) or default_keywords(card)
-        
-def Text(card, val=None):
-    return override(card, 'Text', val) or default_text(card)
-        
-def BonusPoints(card, val=None):
-    return override(card, 'BonusPoints', val) or default_bonus_points(card)
-        
-def YourRequirements(card, val=None):
-    return override(card, 'YourRequirements', val) or default_your_requirements(card)
-        
-def OpponentsRequirements(card, val=None):
-    return override(card, 'OpponentsRequirements', val) or default_opponents_requirements(card)
-        
-def Rarity(card, val=None):
-    return override(card, 'Rarity', val) or default_rarity(card)
-        
-def OnGameLoad(card, val=None):
-    return override(card, 'OnGameLoad', val) or default_on_game_load(card)
-        
-def ActivatedList(card, val=None):
-    return override(card, 'ActivatedList', val) or default_activated_list(card)
+'''
+#TODO: Migrate to this method
+def readProperty(card, prop, asList=False, args_dict={}, applyMods=True):
+    val = cardDefaults[card._id][int(isBoosted(card))][prop]
+    if applyMods:
+        args_dict['value'] = val
+        args_dict['card'] = card
+        val = applyModifiers(property[prop], args_dict)['value']
+    if asList:
+        if type(val) != list: return [val]
+        return val
+    if type(val) == list: return val[0]
+    return val
     
-def Activated(card, val=None):
-    return override(card, 'Activated', val) or default_activated(card)
+
+def Name(card, args_dict=None, applyMods=True):
+    asList = True
+    if args_dict == None:
+        args_dict = {}
+        asList = False
+    val = cardDefaults[card._id][int(isBoosted(card))]['Title']
+    sub = cardDefaults[card._id][int(isBoosted(card))]['Subtitle']
+    if sub != '': val = val + ', ' + sub
+    if applyMods:
+        args_dict['value'] = val
+        args_dict['card'] = card
+        val = applyModifiers(property.Name, args_dict)['value']
+    if asList:
+        if type(val) != list: return [val]
+        return val
+    if type(val) == list: return val[0]
+    return val
+    #return override(card, 'Name', val) or default_name(card)
+
+def Title(card, args_dict=None, applyMods=True):
+    if args_dict == None:
+        args_dict = {}
+        return readProperty(card, 'Title', False, {}, applyMods)
+    return readProperty(card, 'Title', True, args_dict, applyMods)
+    #return override(card, 'Title', val) or default_title(card)
         
-def PrePlayCard(card, val=None):
-    return override(card, 'PrePlayCard', val) or default_pre_play_card(card)
+def Subtitle(card, args_dict=None, applyMods=True):
+    if args_dict == None:
+        args_dict = {}
+        return readProperty(card, 'Subtitle', False, {}, applyMods)
+    return readProperty(card, 'Subtitle', True, args_dict, applyMods)
+    #return override(card, 'Subtitle', val) or default_subtitle(card)
         
-def CheckPlay(card, val=None):
-    return override(card, 'CheckPlay', val) or default_check_play(card)
+def Number(card, args_dict=None, applyMods=True):
+    if args_dict == None:
+        args_dict = {}
+        return readProperty(card, 'Number', False, {}, applyMods)
+    return readProperty(card, 'Number', True, args_dict, applyMods)
+    #return override(card, 'Number', val) or default_number(card)
         
-def EntersPlay(card, val=None):
-    return override(card, 'EntersPlay', val) or default_enters_play(card)
+def Type(card, args_dict=None, applyMods=True):
+    if args_dict == None:
+        args_dict = {}
+        return readProperty(card, 'Type', False, {}, applyMods)
+    return readProperty(card, 'Type', True, args_dict, applyMods)
+    #return override(card, 'Type', val) or default_type(card)
         
-def LeavesPlay(card, val=None):
-    return override(card, 'LeavesPlay', val) or default_leaves_play(card)
+def Traits(card, args_dict=None, applyMods=True):
+    if args_dict == None:
+        args_dict = {}
+        return readProperty(card, 'Traits', False, {}, applyMods)
+    return readProperty(card, 'Traits', True, args_dict, applyMods)
+    #return override(card, 'Traits', val) or default_traits(card)
         
-def Flipped(card, val=None):
-    return override(card, 'Flipped', val) or default_flipped(card)
+def Colors(card, args_dict=None, applyMods=True):
+    if args_dict == None:
+        args_dict = {}
+        return readProperty(card, 'Colors', False, {}, applyMods)
+    return readProperty(card, 'Colors', True, args_dict, applyMods)
+    #return override(card, 'Colors', val) or default_colors(card)
         
-def Moved(card, val=None):
-    return override(card, 'Moved', val) or default_moved(card)
+def Power(card, args_dict=None, applyMods=True):
+    if args_dict == None:
+        args_dict = {}
+        return readProperty(card, 'Power', False, {}, applyMods)
+    return readProperty(card, 'Power', True, args_dict, applyMods)
+    #return override(card, 'Power', val) or default_power(card)
         
-def Uncovered(card, val=None):
-    return override(card, 'Uncovered', val) or default_uncovered(card)
+def Cost(card, args_dict=None, applyMods=True):
+    if args_dict == None:
+        args_dict = {}
+        return readProperty(card, 'Cost', False, {}, applyMods)
+    return readProperty(card, 'Cost', True, args_dict, applyMods)
+    #return override(card, 'Cost', val) or default_cost(card)
         
-def Confront(card, val=None):
-    return override(card, 'Confronted', val) or default_confront(card)
+def PlayRequirements(card, args_dict=None, applyMods=True):
+    if args_dict == None:
+        args_dict = {}
+        return readProperty(card, 'PlayRequirements', False, {}, applyMods)
+    return readProperty(card, 'PlayRequirements', True, args_dict, applyMods)
+    #return override(card, 'PlayRequirements', val) or default_play_requirements(card)
         
-def Replaced(card, val=None):
-    return override(card, 'Replaced', val) or default_solved(card)
+def Keywords(card, args_dict=None, applyMods=True):
+    if args_dict == None:
+        args_dict = {}
+        return readProperty(card, 'Keywords', False, {}, applyMods)
+    return readProperty(card, 'Keywords', True, args_dict, applyMods)
+    #return override(card, 'Keywords', val) or default_keywords(card)
+        
+def Text(card, args_dict=None, applyMods=True):
+    if args_dict == None:
+        args_dict = {}
+        return readProperty(card, 'Text', False, {}, applyMods)
+    return readProperty(card, 'Text', True, args_dict, applyMods)
+    #return override(card, 'Text', val) or default_text(card)
+        
+def BonusPoints(card, args_dict=None, applyMods=True):
+    if args_dict == None:
+        args_dict = {}
+        return readProperty(card, 'BonusPoints', False, {}, applyMods)
+    return readProperty(card, 'BonusPoints', True, args_dict, applyMods)
+    #return override(card, 'BonusPoints', val) or default_bonus_points(card)
+        
+def YourRequirements(card, args_dict=None, applyMods=True):
+    if args_dict == None:
+        args_dict = {}
+        return readProperty(card, 'YourRequirements', False, {}, applyMods)
+    return readProperty(card, 'YourRequirements', True, args_dict, applyMods)
+    #return override(card, 'YourRequirements', val) or default_your_requirements(card)
+        
+def OpponentsRequirements(card, args_dict=None, applyMods=True):
+    if args_dict == None:
+        args_dict = {}
+        return readProperty(card, 'OpponentsRequirements', False, {}, applyMods)
+    return readProperty(card, 'OpponentsRequirements', True, args_dict, applyMods)
+    #return override(card, 'OpponentsRequirements', val) or default_opponents_requirements(card)
+        
+def Rarity(card, args_dict=None, applyMods=True):
+    if args_dict == None:
+        args_dict = {}
+        return readProperty(card, 'Rarity', False, {}, applyMods)
+    return readProperty(card, 'Rarity', True, args_dict, applyMods)
+    #return override(card, 'Rarity', val) or default_rarity(card)
+        
+def OnGameLoad(card, args_dict=None, applyMods=True):
+    if args_dict == None:
+        args_dict = {}
+        return readProperty(card, 'OnGameLoad', False, {}, applyMods)
+    return readProperty(card, 'OnGameLoad', True, args_dict, applyMods)
+    #return override(card, 'OnGameLoad', val) or default_on_game_load(card)
+        
+def ActivatedList(card, args_dict=None, applyMods=True):
+    if args_dict == None:
+        args_dict = {}
+        return readProperty(card, 'ActivatedList', False, {}, applyMods)
+    return readProperty(card, 'ActivatedList', True, args_dict, applyMods)
+    #return override(card, 'ActivatedList', val) or default_activated_list(card)
+    
+def Activated(card, args_dict=None, applyMods=True):
+    if args_dict == None:
+        args_dict = {}
+        return readProperty(card, 'Activated', False, {}, applyMods)
+    return readProperty(card, 'Activated', True, args_dict, applyMods)
+    #return override(card, 'Activated', val) or default_activated(card)
+        
+def PrePlayCard(card, args_dict=None, applyMods=True):
+    if args_dict == None:
+        args_dict = {}
+        return readProperty(card, 'PrePlayCard', False, {}, applyMods)
+    return readProperty(card, 'PrePlayCard', True, args_dict, applyMods)
+    #return override(card, 'PrePlayCard', val) or default_pre_play_card(card)
+        
+def CheckPlay(card, args_dict=None, applyMods=True):
+    if args_dict == None:
+        args_dict = {}
+        return readProperty(card, 'CheckPlay', False, {}, applyMods)
+    return readProperty(card, 'CheckPlay', True, args_dict, applyMods)
+    #return override(card, 'CheckPlay', val) or default_check_play(card)
+        
+def EntersPlay(card, args_dict=None, applyMods=True):
+    if args_dict == None:
+        args_dict = {}
+        return readProperty(card, 'EntersPlay', False, {}, applyMods)
+    return readProperty(card, 'EntersPlay', True, args_dict, applyMods)
+    #rreturn override(card, 'EntersPlay', val) or default_enters_play(card)
+        
+def LeavesPlay(card, args_dict=None, applyMods=True):
+    if args_dict == None:
+        args_dict = {}
+        return readProperty(card, 'LeavesPlay', False, {}, applyMods)
+    return readProperty(card, 'LeavesPlay', True, args_dict, applyMods)
+    #return override(card, 'LeavesPlay', val) or default_leaves_play(card)
+        
+def Flipped(card, args_dict=None, applyMods=True):
+    if args_dict == None:
+        args_dict = {}
+        return readProperty(card, 'Flipped', False, {}, applyMods)
+    return readProperty(card, 'Flipped', True, args_dict, applyMods)
+    #return override(card, 'Flipped', val) or default_flipped(card)
+        
+def Moved(card, args_dict=None, applyMods=True):
+    if args_dict == None:
+        args_dict = {}
+        return readProperty(card, 'Moved', False, {}, applyMods)
+    return readProperty(card, 'Moved', True, args_dict, applyMods)
+    #return override(card, 'Moved', val) or default_moved(card)
+        
+def Uncovered(card, args_dict=None, applyMods=True):
+    if args_dict == None:
+        args_dict = {}
+        return readProperty(card, 'Uncovered', False, {}, applyMods)
+    return readProperty(card, 'Uncovered', True, args_dict, applyMods)
+    #return override(card, 'Uncovered', val) or default_uncovered(card)
+        
+def Confront(card, args_dict=None, applyMods=True):
+    if args_dict == None:
+        args_dict = {}
+        return readProperty(card, 'Confronted', False, {}, applyMods)
+    return readProperty(card, 'Confronted', True, args_dict, applyMods)
+    #return override(card, 'Confronted', val) or default_confront(card)
+        
+def Replaced(card, args_dict=None, applyMods=True):
+    if args_dict == None:
+        args_dict = {}
+        return readProperty(card, 'Replaced', False, {}, applyMods)
+    return readProperty(card, 'Replaced', True, args_dict, applyMods)
+    #return override(card, 'Replaced', val) or default_solved(card)

@@ -32,7 +32,6 @@ def cleanupEvents():
     if isIteratingEvents: return
     rmLst = []
     global eventsToRemove
-    #global eventBus
     for e in eventBus.iterkeys():
         for id in eventsToRemove:
             if id in eventBus[e]:
