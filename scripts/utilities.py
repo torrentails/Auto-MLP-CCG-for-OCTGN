@@ -101,6 +101,7 @@ def excecute(card, effectType, a={}, retVal=True):
     e = parseString(e, whiteSpace)
     
     a['card'] = card
+    #whisper("{}".format(e))
     exec(e)
     return retVal
     
@@ -186,27 +187,39 @@ def isPhase(p):
 def isMyPhase(p):
     return isPhase(p) and me.isActivePlayer()
     
-def isExhausted(card):
-    if not inPlay(card) or Type(card) == cardType.problem or Type(card) == cardType.event: return None
-    return card.orientation & Rot90 == Rot90
+def isExhausted(card, truefalse):
+    typList = TypeList(card)
+    if cardType.resource in typList or cardType.troublemaker in typList or isCharacter(card):
+        if inPlay(card):
+            return card.orientation & Rot90 == Rot90
+    if truefalse: return False
+    return None
     
-def isReady(card):
-    ex = isExhausted(card)
-    if ex == None: return ex
+def isReady(card, truefalse=False):
+    ex = isExhausted(card, truefalse)
+    if ex == None:
+        if trueFalse: return False
+        else: return ex
     return not ex
     
 def canExhaust(card):
-    try:
-        return isReady(card) and inPlay(card)
-    except: return False
+    return isReady(card, True)
+    
+def canReady(card):
+    return isExhausted(card, True)
     
 def exhaust(card):
     mute()
     if canExhaust(card):
         card.orientation = Rot90
     
+def ready(card):
+    mute()
+    if canExhaust(card):
+        card.orientation = Rot0
+    
 def isCharacter(card):
-    if Type(card) == cardType.friend or Type(card) == cardType.maneCharacter:
+    if cardType.friend in TypeList(card) or cardType.maneCharacter in TypeList(card):
         return cardType.character
     else: return False
     

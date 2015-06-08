@@ -59,6 +59,8 @@ def onDoubleClick(card, x = 0, y = 0):
     if fireEvent(event.preClickCard, card=card, doubleClick=True) == True: return
     fireEvent(event.clickCard, card=card, doubleClick=True)
     activate(card, x, y)
+    if getLocation(card) == location.hand:
+        tryPlayCard(card)
 
 #Called when multiple cards are moved at once
 #Possible bug: both this and onMoveCard event are fired when multiple cards are moved.

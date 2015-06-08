@@ -17,7 +17,7 @@ event = Enum('Event', l)
 modifier = Enum('modifier', ['cost', 'power', 'color'])
 
 #Card Properties
-property = Enum('property', ['Title', 'Subtitle', 'Number', 'Type', 'Traits', 'Colors', 'Power', 'Cost', 'Play Requirements', 'Keywords', 'Text', 'Bonus Points', 'Your Requirements', 'Opponents Requirements', 'Rarity', 'On Game Load', 'Activated List', 'Activated', 'Check Play', 'Pre Play Card', 'Enters Play', 'Leaves Play', 'Flipped', 'Moved', 'Uncovered', 'Confront', 'Replaced'])
+property = Enum('property', ['Name', 'Title', 'Subtitle', 'Number', 'Type', 'Traits', 'Colors', 'Power', 'Cost', 'Play Requirements', 'Keywords', 'Text', 'Bonus Points', 'Your Requirements', 'Opponents Requirements', 'Rarity', 'On Game Load', 'Activated List', 'Activated', 'Check Play', 'Pre Play Card', 'Enters Play', 'Leaves Play', 'Flipped', 'Moved', 'Uncovered', 'Confront', 'Replaced'])
 
 #Card types
 cardType = Enum('cardType', ['Character', 'Mane Character', 'Friend', 'Event', 'Resource', 'Troublemaker', 'Problem', 'Strife', 'Quest'])

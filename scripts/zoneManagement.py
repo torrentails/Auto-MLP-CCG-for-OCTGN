@@ -96,7 +96,7 @@ def setLocation(card, loc, organize=True, sync=True):
             z[l.name]=[]
             for c in locations[p][l]:
                 z[l.name].append(Name(Card(c)))
-        whisper("zone{}: {}".format(p, z))
+        #whisper("zone{}: {}".format(p, z))
     
 def moveToLocation(card, loc, index=None, trigger=True, sync=True):
     #TODO: add events and modifiers relating to card movement
