@@ -21,6 +21,7 @@ def tableActivate(group, x = 0, y = 0):
 
 def activate(card, x = 0, y = 0):
     """Called when a card is clicked once. It will check if an action or a card being played is awaiting selection and, if so, will select the card/play the card being played to the clicked card's location. If not, then event.preClickCard and event.clickCard are fired."""
+    whisper("activate")
     if eval(getGlobalVariable('playingCard_player')) == me._id:
         playCard(location.home)
         return
@@ -52,6 +53,7 @@ def onClickCard(card, x = 0, y = 0):
 
 def onDoubleClick(card, x = 0, y = 0):
     """Called when a card is clicked once. It will check if an action or a card being played is awaiting selection and, if so, will select the card/play the card being played to the clicked card's location. If not, then event.preClickCard and event.clickCard are fired. Finally, if it is not cancelled by event.preClickCard, the function will make a call to activate."""
+    whisper("doubleclick")
     if eval(getGlobalVariable('playingCard_player')) == me._id:
         if inPlay(card):
             playCard(getLocation(card))
@@ -133,6 +135,7 @@ def surrender(group, x=0, y=0):
 def tryPlayCard(card, x = 0, y = 0):
     """Called by pressing space on or double clicking a card in hand; this will run through various validations before finally enabling the player to play the card.
     NOTE: Eventually double clicking a card will prioritize activating the effect of a card in hand before trying to play it, such as if a card can discard itself to activate an effect or something similar. Players should be encouraged to press Space bar to play cards."""
+    whisper("Try play cards")
     mute()
     if eval(getGlobalVariable('playingCard_player')) == me._id:
         playCard(location.home)

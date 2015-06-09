@@ -2850,13 +2850,13 @@
       <property name="CheckPlay" value="
       foundCharacter = False;
       for c in table:;
-        if c.controller == me and isCharacter(c):;
+        if isCharacter(c):;
           if color.blue in Colors(c) or color.pink in Colors(c):;
             foundCharacter = True;
       if foundCharacter: retVal = True;
       else:;
         retVal = False;
-        reason(;;You don't control a Blue or Pink character.;;)"/>
+        reason(;;No Blue or Pink character in play.;;)"/>
       <property name="Activated" value=""/>
       <property name="EntersPlay" value="
       def func(d):;

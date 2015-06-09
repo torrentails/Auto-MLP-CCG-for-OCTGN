@@ -94,7 +94,7 @@
 
   <table name="Table" visibility="undefined" ordered="False" width="1280" height="720" board="images/bg.png" background="images/bg.png" backgroundStyle="uniformToFill">
   
-    <cardaction menu="Activate" shortcut="SPACE" default="True" execute="activate" />
+    <cardaction menu="Activate" shortcut="SPACE" execute="activate" />
     <groupaction menu="End phase" shortcut="tab" execute="endPhase" />
     <groupaction menu="Declare response" shortcut="CTRL+SPACE" execute="declareResponse" />
     <groupaction menu="Cancel playing card" shortcut="ESC" execute="cancelPlayingCard" />
@@ -108,11 +108,11 @@
     <counter name="AT" default="0" icon="images/AT.png" />
 
     <hand name="Hand" visibility="me" ordered="False" width="84" height="117" icon="images/placeholder.png">
-      <cardaction menu="Play Card" shortcut="SPACE" default="True" execute="tryPlayCard" />
+      <cardaction menu="Play Card" shortcut="SPACE" execute="tryPlayCard" />
     </hand>
 
     <group name="Deck" visibility="none" width="84" height="117" icon="images/placeholder.png">
-      <groupaction menu="Draw a card" shortcut="CTRL+D" default="True" execute="payToDraw" />
+      <groupaction menu="Draw a card" shortcut="CTRL+D" execute="payToDraw" />
     </group>
 
     <group name="Problem Deck" visibility="none" width="84" height="117" icon="images/placeholder.png">

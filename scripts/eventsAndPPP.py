@@ -1,4 +1,3 @@
-import collections
 #-----------------------------------------------------------------------
 # Event bus management
 #-----------------------------------------------------------------------
@@ -7,20 +6,24 @@ import collections
 eventBus = {}
 delayedEvents = []
 eventsToRemove = []
-isIteratingEvents = False
+eventsToAdd = []
+isIteratingEvents = 0
 
-def registerEvent(evt, func, delayed=False, runOnce=False, id=None, **kwargs):
+def registerEvent(evt, funcion, delayed=False, runOnce=False, id=None, **kwargs):
     if id == None: id = uuid4()
-    if delayed: delayedEvents.append([evt, func, runOnce, id, kwargs])
+    if delayed: delayedEvents.append([evt, funcion, runOnce, id, kwargs])
     else:
+        global isIteratingEvents
+        if isIteratingEvents > 0:
+            eventsToAdd.append([evt, funcion, delayed, runOnce, id, kwargs])
         if evt not in eventBus: eventBus[evt] = {}
-        eventBus[evt][id] = [func, runOnce, kwargs]
+        eventBus[evt][id] = [funcion, runOnce, kwargs]
     return id
         
 def enableDelayedEvents():
     global delayedEvents
     for e in delayedEvents:
-        registerEvent(e[0], e[1], runOnce=e[2], id=e[3])
+        registerEvent(e[0], e[1], runOnce=e[2], id=e[3], **e[4])
     delayedEvents = []
 
 def removeEvent(id):
@@ -29,7 +32,7 @@ def removeEvent(id):
     
 def cleanupEvents():
     global isIteratingEvents
-    if isIteratingEvents: return
+    if isIteratingEvents > 0: return
     rmLst = []
     global eventsToRemove
     for e in eventBus.iterkeys():
@@ -39,19 +42,22 @@ def cleanupEvents():
     for v in rmLst:
         del eventBus[v[0]][v[1]]
     eventsToRemove = []
+    global eventsToAdd
+    for e in eventsToAdd:
+        registerEvent(e[0], e[1], e[2], e[3], e[4], **e[5])
     
 def fireEvent(evt, **args):
     if evt not in eventBus: return False
     args['event'] = evt
     args['canceled'] = False
     global isIteratingEvents
-    isIteratingEvents = True
+    isIteratingEvents += 1
     for id in eventBus[evt].iterkeys():
         args.update(eventBus[evt][id][2])
         ret = eventBus[evt][id][0](args)
         if ret == None or ret == True:
             if eventBus[evt][id][1]: removeEvent(id)
-    isIteratingEvents = False
+    isIteratingEvents -= 1
     cleanupEvents()
     return args['canceled']
     
