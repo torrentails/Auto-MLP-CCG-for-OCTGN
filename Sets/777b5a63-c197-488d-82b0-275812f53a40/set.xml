@@ -31,7 +31,7 @@
       <property name="Uncovered" value=""/>
       <property name="Confront" value=""/>
       <property name="Replaced" value=""/>
-      <alternate name="Rainbow Crash" type="Mane Character Boosted">
+      <alternate name="Rainbow Dash" type="Mane Character Boosted">
         <property name="Subtitle" value="Flier Extraordinaire"/>
         <property name="Number" value="1"/>
         <property name="Type" value="Mane Character Boosted"/>
@@ -3989,7 +3989,7 @@
       <property name="OpponentsRequirements" value=""/>
       <property name="Rarity" value="U"/>
       <property name="OnGameLoad" value=""/>
-      <property name="ActivatedList" value="retVal = me.counters['Actions'].value ;.= 1 and canExhaust(card)"/>
+      <property name="ActivatedList" value="retVal = me.counters['AT'].value ;.= 1 and canExhaust(card)"/>
       <property name="CheckPlay" value="retVal = location.home"/>
       <property name="Activated" value="
       cond = lambda d: trait.Critter in Traits(d['card']);
@@ -4003,7 +4003,7 @@
       rem_cond = lambda d: me.isActivePlayer;
       Modifier([modifier.power, modifier.color], cond, act, event.startTurn, rem_cond);
       exhaust(card);
-      me.counters['Actions'].value -= 1"/>
+      me.counters['AT'].value -= 1"/>
       <property name="EntersPlay" value=""/>
       <property name="LeavesPlay" value=""/>
       <property name="Flipped" value=""/>

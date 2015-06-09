@@ -127,11 +127,11 @@ def parseString(str, ws):
 
 dataDict = {}
 
-def readData(name, default=''):
-    if name not in dataDict: dataDict[name] = default
+def readData(name, default=None):
+    if name not in dataDict: return default
     return dataDict[name]
 
-def popData(name, default=''):
+def popData(name, default=None):
     if name not in dataDict: return default
     return dataDict.pop(name)
     
@@ -140,6 +140,22 @@ def writeData(name, data):
     
 def reason(msg):
     writeData('reason', msg)
+
+#-----------------------------------------------------------------------
+# Context manager
+#-----------------------------------------------------------------------
+
+context = {}
+
+def setContext(**kargs):
+    global context
+    context = kargs
+    remoteCall(players[1], setContext, [**kargs])
+    
+def clearContext():
+    global context
+    context = {}
+    remoteCall(players[1], flushContext, [])
 
 #-----------------------------------------------------------------------
 # Internal helper functions
@@ -202,28 +218,45 @@ def isReady(card, truefalse=False):
     return not ex
     
 def canExhaust(card):
-    return isReady(card, True)
+    if isReady(card, True) == True:
+        return applyModifiers(modifier.canExhaust, {'card':card, 'isReady':True})['isReady']
+    return False
     
 def canReady(card):
-    return isExhausted(card, True)
+    if isExhausted(card, True) == True:
+        return applyModifiers(modifier.canReady, {'card':card, 'isExhausted':True})['isExhausted']
+    return False
     
 def exhaust(card):
     mute()
+    if card.controler != me:
+        remoteCall(card.controler, 'exhaust', [card])
+        return
     if canExhaust(card):
-        card.orientation = Rot90
+        if not fireEvent(preEvent.exhaust, card=card):
+            card.orientation = Rot90
+            fireEvent(event.exhaust, card=card)
     
 def ready(card):
     mute()
-    if canExhaust(card):
-        card.orientation = Rot0
+    if card.controler != me:
+        remoteCall(card.controler, 'ready', [card])
+        return
+    if canReady(card):
+        if not fireEvent(preEvent.ready, card=card):
+            card.orientation = Rot0
+            fireEvent(event.ready, card=card)
     
 def isCharacter(card):
     if cardType.friend in TypeList(card) or cardType.maneCharacter in TypeList(card):
         return cardType.character
     else: return False
     
-def draw(ammount=1, note=True):
+def draw(amount=1, player=me note=True):
     mute()
+    if player != me:
+        remoteCall(player, 'draw', [amount, player, note])
+        return
     group = me.deck
     if type(ammount) != int:
         group = ammount
