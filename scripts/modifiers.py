@@ -9,7 +9,8 @@ def applyModifiers(modifier_type, args_dict):
             args_dict['modifier'] = m
             try:
                 args_dict['changed'] = m.activate(args_dict) or args_dict['changed']
-            except: whisper("Keyerror in modifiers.")
+            except:
+                if devMode: whisper("Keyerror in modifiers.")
     return args_dict
     
 def enableDelayedModifiers():

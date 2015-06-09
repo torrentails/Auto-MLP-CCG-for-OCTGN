@@ -101,7 +101,6 @@ def excecute(card, effectType, a={}, retVal=True):
     e = parseString(e, whiteSpace)
     
     a['card'] = card
-    #whisper("{}".format(e))
     exec(e)
     return retVal
     
