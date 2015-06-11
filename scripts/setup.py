@@ -197,7 +197,8 @@ def continueSetup():
             return
         
     firstPlayer = Player(eval(getGlobalVariable('firstPlayer')))
+    setGlobalVariable('turnPlayer', str(firstPlayer._id))
     remoteCall(firstPlayer, 'startGame', [])
     
 def startGame():
-    pass #TODO: add game start code here.
+    _startTurn()

@@ -69,6 +69,22 @@ def getCardsAtLocation(loc, player=None):
     if player: return [card for card in locations[2][loc] if card.controller == player]
     return locations[2][loc]
     
+def getCardsInPlay(player=None):
+    lst = locations[2][location.home]+locations[2][location.myProblem]+locations[2][location.oppProblem]
+    if player: return [c for c in lst if c.controler == player]
+    return lst
+
+def isInPlay(card=None):
+    return isTable(getLocation(card))
+            
+def getLocationFromCords(x, y=None):
+    if y == None:
+        x,y = x.position
+    invert = int(me.hasInvertedTable())
+    for zone in iter(zones):
+        z = zones[zone]['bounds'][invert]
+        if z['x1'] < x < z['x2'] and z['y1'] < y < z['y2']: return zone
+    
 def getGroupFromLocation(p, loc):
     if isTable(loc): return table
     if loc == location.hand: return p.hand
@@ -96,8 +112,7 @@ def setLocation(card, loc, organize=True, sync=True):
             z[l.name]=[]
             for c in locations[p][l]:
                 z[l.name].append(Name(Card(c)))
-        #whisper("zone{}: {}".format(p, z))
-    
+
 def moveToLocation(card, loc, index=None, trigger=True, sync=True):
     #TODO: add events and modifiers relating to card movement
     oldLoc = getLocation(card)
@@ -106,7 +121,7 @@ def moveToLocation(card, loc, index=None, trigger=True, sync=True):
         loc = oldLoc
     if oldLoc == loc:
         if index:
-            if inPlay(card): card.setIndex(index)
+            if isInPlay(card): card.setIndex(index)
             else: card.moveTo(card.group, index)
         return
     g = getGroupFromLocation(card.controller, loc)
@@ -116,19 +131,6 @@ def moveToLocation(card, loc, index=None, trigger=True, sync=True):
     else:
         card.moveTo(g)
     setLocation(card, loc, sync=sync, organize=isTable(loc))
-
-def inPlay(card=None):
-    if card == None:
-        return locations[2][location.home]+locations[2][location.myProblem]+locations[2][location.oppProblem]
-    return isTable(getLocation(card))
-            
-def getLocationFromCords(x, y=None):
-    if y == None:
-        x,y = x.position
-    invert = int(me.hasInvertedTable())
-    for zone in iter(zones):
-        z = zones[zone]['bounds'][invert]
-        if z['x1'] < x < z['x2'] and z['y1'] < y < z['y2']: return zone
     
 def organizeZone(loc):
     if not isTable(loc): return

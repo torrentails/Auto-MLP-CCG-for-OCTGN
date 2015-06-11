@@ -2,20 +2,20 @@
 dispatch = Enum('dispatch', ['onGameLoad', 'activatedList', 'activated', 'checkPlay', 'prePlayCard', 'entersPlay', 'leavesPlay', 'flipped', 'moved', 'uncovered', 'confronted', 'replaced'])
 
 ##Event types
-event = Enum('event', ['Start of Phase', 'End of Phase', 'Start Turn', 'End Turn', 'Ready Phase', 'Troublemaker Phase', 'Main Phase', 'Score Phase', 'End Phase', 'Play Card', 'Click Card', 'Activate Effect', 'Leave Play'])
-preEvent = Enum('preEvent', ['Play Card', 'Click Card', 'Activate Effect', 'Leave Play'])
+event = Enum('event', ['Start of Phase', 'End of Phase', 'Start Turn', 'End Turn', 'Ready Phase', 'Troublemaker Phase', 'Main Phase', 'Score Phase', 'End Phase', 'Play Card', 'Click Card', 'Activate Effect', 'Leave Play', 'Draw', 'gainAT', 'loseAT', 'gainPoints', 'losePoints'])
+preEvent = Enum('preEvent', ['Play Card', 'Click Card', 'Activate Effect', 'Leave Play', 'Draw', 'gainAT', 'loseAT', 'gainPoints', 'losePoints'])
 
 ##Phases
 pahse = Enum('phase', ['Ready', 'Troublemaker', 'Main', 'Score', 'End'])
 
 ##Modifier types
-modifier = Enum('modifier', ['cost', 'power', 'color', 'gainAT'])
+modifier = Enum('modifier', ['cost', 'power', 'color', 'gainAT', 'loseAT', 'gainPoints', 'losePoints', 'canExhaust', 'canReady'])
 
 ##Card Properties
 property = Enum('property', ['Name', 'Title', 'Subtitle', 'Number', 'Type', 'Traits', 'Colors', 'Power', 'Cost', 'Play Requirements', 'Keywords', 'Text', 'Bonus Points', 'Your Requirements', 'Opponents Requirements', 'Rarity', 'On Game Load', 'Activated List', 'Activated', 'Check Play', 'Pre Play Card', 'Enters Play', 'Leaves Play', 'Flipped', 'Moved', 'Uncovered', 'Confront', 'Replaced'])
 
 ##Card types
-cardType = Enum('cardType', ['Character', 'Mane Character', 'Friend', 'Event', 'Resource', 'Troublemaker', 'Problem', 'Strife', 'Quest'])
+cardType = Enum('cardType', ['Character', 'Mane Character', 'Friend', 'Event', 'Resource', 'Troublemaker', 'Problem'])
 
 ##Card traits
 trait = Enum('trait', ['Earth Pony', 'Unicorn', 'Pegasus', 'Alicorn', 'Ally', 'Breezie', 'Buffalo', 'Changeling', 'Critter', 'Crystal', 'Donkey', 'Draconequus', 'Dragon', 'Griffon', 'Zebra', 'Ahuizotl', 'Cow', 'Chaotic', 'Elder', 'Foal', 'Minotaur', 'Performer', 'Rock', 'Royalty', 'Sea Serpent', 'Tree', 'Accessory', 'Armor', 'Artifact', 'Asset', 'Condition', 'Location', 'Report', 'Mailbox', 'Unique', 'Gotcha', 'Showdown', 'Epic'])

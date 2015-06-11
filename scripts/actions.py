@@ -45,7 +45,7 @@ def activate(card, x = 0, y = 0):
 def onClickCard(card, x = 0, y = 0):
     """Called when a card is clicked once. It will check if an action or a card being played is awaiting selection and, if so, will select the card/play the card being played to the clicked card's location. If not, then event.preClickCard and event.clickCard are fired. Finally, if it is not cancelled by event.preClickCard, the function will make a call to activate."""
     if eval(getGlobalVariable('playingCard_player')) == me._id:
-        if inPlay(card):
+        if isInPlay(card):
             playCard(getLocation(card))
         return
     if fireEvent(event.preClickCard, card=card, doubleClick=False) == True: return
@@ -55,7 +55,7 @@ def onDoubleClick(card, x = 0, y = 0):
     """Called when a card is clicked once. It will check if an action or a card being played is awaiting selection and, if so, will select the card/play the card being played to the clicked card's location. If not, then event.preClickCard and event.clickCard are fired. Finally, if it is not cancelled by event.preClickCard, the function will make a call to activate."""
     whisper("doubleclick")
     if eval(getGlobalVariable('playingCard_player')) == me._id:
-        if inPlay(card):
+        if isInPlay(card):
             playCard(getLocation(card))
         return
     if fireEvent(event.preClickCard, card=card, doubleClick=True) == True: return
@@ -184,7 +184,7 @@ def playCard(loc=location.home):
     card = Card(eval(getGlobalVariable('playingCard_card')))
     tpy = Type(card)
     cost = eval(getGlobalVariable('playingCard_cost'))
-    fireEvent(event.prePlayCard, card=card, cost=cost, loc=loc, played=True)
+    fireEvent(preEvent.playCard, card=card, cost=cost, loc=loc, played=True)
     me.counters['AT'].value -= cost
     #card.moveToTable(-95,60)
     moveToLocation(card, loc, trigger=False)

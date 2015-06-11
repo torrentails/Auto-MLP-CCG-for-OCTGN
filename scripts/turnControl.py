@@ -4,36 +4,27 @@
 
 def _startTurn():
     mute()
-# Priority and PPP enabled
+    enablePPP()
     fireEvent(event.startTurn)
 
 def _readyPhase():
     mute()
     setGlobalVariable("Phase", phase.ready.name)
-# Priority and PPP disabled
+    disablePPP()
     fireEvent(event.startOfPhase, phase=phase.ready)
     fireEvent(event.readyPhase)
     # Ready Step
-    for card in inPlay():
-        if card.controler == me: ready(card)
+    for card in getCardsInPlay(me): ready(card)
     # Action Step
     higestPoints = max(me.counters['Points'].value, players[1].counters['Points'].value)
     if highestPoints >= 11: AtToGain = 5
     elif highestPoints >= 6: AtToGain = 4
     elif highestPoints >= 3: AtToGain = 3
     else: AtToGain = 2
-    dict = {'source':phase.ready, 'amount':AtToGain}
-    applyModifiers(modifier.gainAT, dict)
-    fireEvent(preEvent.gainAT, **dict)
-    me.counters['AT'].value += dict['amount']
-    notifyAll("{} gains {} Actions Tokens.".format(me, dict['amount'])
-    fireEvent(event.gainAT, **dict)
-# Priority and PPP enabled
+    gainAT(AtToGain)
+    enablePPP()
     # Draw Step
-    if not eval(getGlobalVariable('firstTurn')):
-        dict = {'source':phase.ready, 'amount':1}
-        applyModifiers(modifier.drawCard, dict)
-        draw(dict['amount'], **dict
+    if not eval(getGlobalVariable('firstTurn')): draw()
     fireEvent(event.endPhase, phase=phase.ready)
 
 def _troublemakerPhase():
@@ -42,12 +33,12 @@ def _troublemakerPhase():
     fireEvent(event.startOfPhase, phase=phase.troublemaker)
     fireEvent(event.troublemakerPhase)
     # Uncover step
-    for card in inPlay():
+    for card in getCardsInPlay():
         if cardType.troublemaker in TypeList(card) and card.controler = me:
             uncover(card)
     # Challenge Step
     foundTMToChalange = False
-    for card in inPlay():
+    for card in getCardsInPlay():
         if cardType.troublemaker in TypeList(card):
             if canChallange(card, me): foundTMToChalange = True
     if not foundTMToChalange:
@@ -78,7 +69,7 @@ def _scorePhase():
     fireEvent(event.scorePhase)
     # Confront step
     problemsConfronted = []
-    for card in inPlay():
+    for card in getCardsInPlay():
         if cardType.problem in Typelist(card):
             if canConfront(card, me):
                 #TODO: Maybe ask which problem to confront first?
@@ -102,7 +93,7 @@ def _endPhase():
     fireEvent(event.startOfPhase, pahse=phase.end)
     # End of Turn Step
     fireEvent(event.endPhase)
-# Priority and PPP disabled
+    disablePPP()
     # Wrap up Step
     # Apply hand limit
     cardsInHand = getCardsAtLocation(location.hand, me)

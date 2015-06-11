@@ -53,41 +53,70 @@
     <globalvariable name="devMode" value="True" />
     <globalvariable name="FirstTurn" value="True" />
     <globalvariable name="FirstPlayer" value="None" />
-    <globalvariable name="TurnStarted" value="False" />
-    <globalvariable name="Phase" value="Start" />
+    <globalvariable name="Phase" value="None" />
     <globalvariable name="playingCard_player" value="None" />
     <globalvariable name="playingCard_card" value="None" />
     <globalvariable name="playingCard_cost" value="None" />
     <globalvariable name="isSetup" value="None" />
+    <globalvariable name="turnPlayer" value="None" />
+    <globalvariable name="PPP" value="False" />
     <globalvariable name="hasPriority" value="None" />
   </globalvariables>
 
+    <!--The full name of the card (title + subtitle) should be stored in the name attribute-->
     <card back="images/card_back.png" front="images/card_front.png" width="84" height="117" cornerRadius="4">
-    <property name="Subtitle" type="String" />
+    <!--Stores the card's title-->
+    <!--<property name="Title" type="String" hidden="True" />-->
+    <!--Stores the names subtitle if any-->
+    <property name="Subtitle" type="String" hidden="True" />
+    <!--Stores the card's number with leading zeroes eg. 001-->
     <property name="Number" type="String" />
+    <!--The type of card; problem, friend, event, etc.-->
     <property name="Type" type="String" />
+    <!--Comma separated card traits; Unicorn, Showdown, etc.-->
     <property name="Traits" type="String" />
+    <!--Comma separated colors of the card if any. Use 'Colorless' for colorless friends otherwise blank-->
     <property name="Colors" type="String" />
+    <!--Power value if any-->
     <property name="Power" type="String" />
+    <!--Cost value if any-->
     <property name="Cost" type="String" />
+    <!--Comma separated play requirements; eg. 4 Orange-->
     <property name="PlayRequirements" type="String" />
+    <!--Comma separated play requirements-->
     <property name="Keywords" type="String" />
+    <!--Text on the card; use &#10; for a line break-->
     <property name="Text" type="String" />
+    <!--Points awarded for confronting or defeating the card-->
     <property name="BonusPoints" type="String" />
+    <!--Comma separated confront requirements; eg. 3 Pink, 4 Non-Pink-->
     <property name="YourRequirements" type="String" />
+    <!--Comma separated confront requirements; eg. 7 Wild-->
     <property name="OpponentsRequirements" type="String" />
+    <!--Abbreviated rarity of the card; eg. UR, C, P, etc.-->
     <property name="Rarity" type="String" />
+    <!--Executed when the card is loaded-->
     <property name="OnGameLoad" type="String" hidden="True" />
+    <!--Executed when the game checks if the card's effect can be activated-->
     <property name="ActivatedList" type="String" hidden="True" />
+    <!--Executed when the card's effect is activated-->
     <property name="Activated" type="String" hidden="True" />
+    <!--Used to check for additional play requirements of the card-->
     <property name="CheckPlay" type="String" hidden="True" />
     <property name="PrePlayCard" type="String" hidden="True" />
+    <!--Executed when the card enters play-->
     <property name="EntersPlay" type="String" hidden="True" />
     <property name="LeavesPlay" type="String" hidden="True" />
+    <!--Executed only when the card is flipped during a faceoff-->
     <property name="Flipped" type="String" hidden="True" />
+    <!--Called when the card changes location, such as moving to another problem or being drawn into hand-->
+    <!--<property name="ChangeLocation" type="String" hidden="True" />-->
     <property name="Moved" type="String" hidden="True" />
+    <!--Called when a problem or troublemaker is turned face up, or when a friend is rallied-->
     <property name="Uncovered" type="String" hidden="True" />
+    <!--Called on each card at a problem when that problem is confronted-->
     <property name="Confront" type="String" hidden="True" />
+    <!--Called on each card at a problem when that problem is replaced-->
     <property name="Replaced" type="String" hidden="True" />
     <size name="Problem" back="images/card_back.png" front="images/card_front.png" width="117" height="84" cornerRadius="4" />
   </card>

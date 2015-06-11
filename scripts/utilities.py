@@ -77,31 +77,32 @@ class Enum(object):
 #-----------------------------------------------------------------------
     
 def excecute(card, effectType, a={}, retVal=True):
-    if   effectType == dispatch.onGameLoad:    e = OnGameLoad(card)
-    elif effectType == dispatch.activatedList: e = ActivatedList(card)
-    elif effectType == dispatch.activated:     e = Activated(card)
-    elif effectType == dispatch.checkPlay:     e = CheckPlay(card)
+    if   effectType == dispatch.onGameLoad:    e,p = OnGameLoad(card),True
+    elif effectType == dispatch.activatedList: e,p = ActivatedList(card),True
+    elif effectType == dispatch.activated:     e,p = Activated(card),False
+    elif effectType == dispatch.checkPlay:     e,p = CheckPlay(card),True
     #TODO: PrePlayCard may be unnecessary; re-examine this when the core is more fleshed out.
-    elif effectType == dispatch.prePlayCard:   e = PrePlayCard(card)
-    elif effectType == dispatch.entersPlay:    e = EntersPlay(card)
+    elif effectType == dispatch.prePlayCard:   e,p = PrePlayCard(card),True
+    elif effectType == dispatch.entersPlay:    e,p = EntersPlay(card),False
     #TODO: Should we remove LeavesPlay as it can be set via events through EntersPlay?
-    elif effectType == dispatch.leavesPlay:    e = LeavesPlay(card)
-    elif effectType == dispatch.flipped:       e = Flipped(card)
+    elif effectType == dispatch.leavesPlay:    e,p = LeavesPlay(card),False
+    elif effectType == dispatch.flipped:       e,p = Flipped(card),False
     #TODO: Should we remove Moved as it can be set via events through EntersPlay?
-    elif effectType == dispatch.moved:         e = Moved(card)
-    elif effectType == dispatch.uncovered:     e = Uncovered(card)
-    elif effectType == dispatch.confronted:    e = Confronted(card)
-    elif effectType == dispatch.replaced:      e = Replaced(card)
+    elif effectType == dispatch.moved:         e,p = Moved(card),False
+    elif effectType == dispatch.uncovered:     e,p = Uncovered(card),False
+    elif effectType == dispatch.confronted:    e,p = Confronted(card),False
+    elif effectType == dispatch.replaced:      e,p = Replaced(card),False
     
     if e == "": return retVal
-    whiteSpace = -1
-    while e[0] == ' ':
-        whiteSpace += 1
-        e = e[1:]
-    e = parseString(e, whiteSpace)
-    
-    a['card'] = card
-    exec(e)
+    if p or isPPPEnabled():
+        whiteSpace = -1
+        while e[0] == ' ':
+            whiteSpace += 1
+            e = e[1:]
+        e = parseString(e, whiteSpace)
+        a['card'] = card
+        exec(e)
+    else: addPPP(excecute, card, effectType, a, retVal)
     return retVal
     
 def parseString(str, ws):
@@ -205,7 +206,7 @@ def isMyPhase(p):
 def isExhausted(card, truefalse):
     typList = TypeList(card)
     if cardType.resource in typList or cardType.troublemaker in typList or isCharacter(card):
-        if inPlay(card):
+        if isInPlay(card):
             return card.orientation & Rot90 == Rot90
     if truefalse: return False
     return None
@@ -252,23 +253,72 @@ def isCharacter(card):
         return cardType.character
     else: return False
     
+def getTurnPlayer():
+    return Player(eval(setGlobalVariable('turnPlayer')))
+    
 def draw(amount=1, player=me note=True):
     mute()
     if player != me:
         remoteCall(player, 'draw', [amount, player, note])
         return
-    group = me.deck
-    if type(ammount) != int:
-        group = ammount
-        ammount = 1
-    if len(group) == 0:
-        whisperBar(warnColor, "You don't have any cards in your {} to draw.".format(group.name))
+    deck = me.deck
+    if len(deck) == 0:
+        whisperBar(warnColor, "You don't have any cards in your {} to draw.".format(deck.name))
         return
-    if len(group) < ammount:
-        whisperBar(errorColor, "Ran out of cards in your {} to draw.".format(group.name))
-        ammount = len(group)
-    for card in group.top(ammount):
-        card.moveTo(me.hand)
-    if note:
-        if ammount == 1: notifyAll(infoColor, "{} draws a card.".format(me))
-        else: notifyAll(infoColor, "{} draws {} cards.".format(me,ammount))
+    dict={'amount':amount}
+    applyModifiers(modifier.drawCard, dict)
+    if dict['amount'] > 0:
+        if not fireEvent(preEvent.draw, **dict):
+            if len(deck) < dict['amount']:
+                whisperBar(errorColor, "Ran out of cards in your {} to draw.".format(deck.name))
+                dict['amount'] = len(deck)
+            disablePPP()
+            for card in deck.top(dict['amount']):
+                moveToLocation(card, location.hand)
+                update()
+                fireEvent(event.draw, **dict)
+            enablePPP()
+            if note:
+                if dict['amount'] == 1: notifyAll(infoColor, "{} draws a card.".format(me))
+                else: notifyAll(infoColor, "{} draws {} cards.".format(me,dict['amount']))
+
+def gainAT(amount):
+    dict = {'amount':amount}
+    applyModifiers(modifier.gainAT, dict)
+    if dict['amount'] > 0:
+        if not fireEvent(preEvent.gainAT, **dict):
+            me.counters['AT'].value += dict['amount']
+            if dict['amount'] == 1: notifyAll("{} gains an Actions Token.".format(me)
+            else: notifyAll("{} gains {} Actions Tokens.".format(me, dict['amount'])
+            fireEvent(event.gainAT, **dict)
+            
+def loseAT(amount, spent=False):
+    dict = {'amount':amount, 'spent':spent}
+    applyModifiers(modifier.loseAT, dict)
+    if dict['amount'] > 0:
+        if not fireEvent(preEvent.loseAT, **dict):
+            me.counters['AT'].value -= dict['amount']
+            fireEvent(event.loseAT, **dict)
+
+def spendAT(amount):
+    loseAT(amount, True)
+
+def gainPoints(amount):
+    dict = {'amount':amount}
+    applyModifiers(modifier.gainPoints, dict)
+    if dict['amount'] > 0:
+        if not fireEvent(preEvent.gainPoints, **dict):
+            me.counters['Points'].value += dict['amount']
+            if dict['amount'] == 1: notifyAll("{} gains a Point.".format(me)
+            else: notifyAll("{} gains {} Points.".format(me, dict['amount'])
+            fireEvent(event.gainPoints, **dict).
+
+def losePoints(amount):
+    dict = {'amount':amount}
+    applyModifiers(modifier.losePoints, dict)
+    if dict['amount'] > 0:
+        if not fireEvent(preEvent.losePoints, **dict):
+            me.counters['Points'].value += dict['amount']
+            if dict['amount'] == 1: notifyAll("{} loses a Point.".format(me)
+            else: notifyAll("{} loses {} Points.".format(me, dict['amount'])
+            fireEvent(event.losePoints, **dict)
