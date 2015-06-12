@@ -174,6 +174,21 @@ def countTotalPower(player, col = "all"):
     
 def giveControl(lst):
     lst[0].setController(lst[1])
+    
+def canChallenge(card, charactersInvolved=[], player=me):
+    dict = {'card':card, 'player':player, 'canChallenge':False, 'charactersInvolved':charactersInvolved}
+    if charactersInvolved == []:
+        for c in getCardsAtLocation(loc, player):
+            if isCharacter(c):
+                dict['canChallenge'] = True
+                dict['charactersInvolved'].append(c)
+    else: dict['canChallenge'] = True
+    applyModifiers(modifier.canChallenge, dict)
+    return dict['canChallenge'], dict['charactersInvolved']
+    
+def canConfront(card, player=me):
+    #TODO: figure out the confront algorithm
+    pass
 
 #-----------------------------------------------------------------------
 # Misc Helper functions
@@ -322,3 +337,28 @@ def losePoints(amount):
             if dict['amount'] == 1: notifyAll("{} loses a Point.".format(me)
             else: notifyAll("{} loses {} Points.".format(me, dict['amount'])
             fireEvent(event.losePoints, **dict)
+
+def uncover(card):
+    if card.isFaceUp: return
+    dict = {'card':card}
+    applyModifiers(modifier.uncover, dict)
+    if not fireEvent(preEvent.uncover, **dict):
+        card.isFaceUp = True
+        fireEvent(event.uncover, **dict)
+
+def beginFaceoff(faceoffType, cardList):
+    #TODO: Write faceoff code
+    pass
+
+def challangeTM(card, charactersInvolved=[]):
+    can, lst = canChallange(card, charactersInvolved)
+    if card not in lst: lst.append(card)
+    if can: beginFaceoff(faceoff.troublemaker, lst)
+    
+def confront(card):
+    #TODO: Write confront code
+    pass
+    
+def replaceProblem(card, solved=True):
+    #TODO: Write replacement code
+    pass

@@ -2,10 +2,20 @@
 # Turn control
 #-----------------------------------------------------------------------
 
+def endPhase(group, x=0, y=0):
+    curPhase = phase[getGlobalVariable("Phase", phase.ready.name)]
+    if not fireEvent(event.endPhase, phase=curPhase):
+        if curPhase == phase.ready: _troublemakerPhase()
+        elif curPhase == phase.troublemaker: _mainPhase()
+        elif curPhase == phase.main: _scorePhase()
+        elif curPhase == phase.score: _endPhase()
+        elif curPhase == phase.end: _passTurn()
+
 def _startTurn():
     mute()
     enablePPP()
     fireEvent(event.startTurn)
+    _readyPhase()
 
 def _readyPhase():
     mute()
@@ -25,7 +35,8 @@ def _readyPhase():
     enablePPP()
     # Draw Step
     if not eval(getGlobalVariable('firstTurn')): draw()
-    fireEvent(event.endPhase, phase=phase.ready)
+    if not fireEvent(event.endPhase, phase=phase.ready):
+        _troublemakerPhase()
 
 def _troublemakerPhase():
     mute()
@@ -40,12 +51,13 @@ def _troublemakerPhase():
     foundTMToChalange = False
     for card in getCardsInPlay():
         if cardType.troublemaker in TypeList(card):
-            if canChallange(card, me): foundTMToChalange = True
+            if canChallange(card): foundTMToChalange = True
     if not foundTMToChalange:
         _troublemakerPhaseEnd()
     
 def _troublemakerPhaseEnd():
-    fireEvent(event.endOfPhase, phase=phase.troublemaker)
+    if not fireEvent(event.endOfPhase, phase=phase.troublemaker):
+        _mainPhase()
 
 def _mainPhase():
     mute()
@@ -60,37 +72,44 @@ def _mainPhase():
         # Activate an ability
         
 def _mainPhaseEnd():
-    firEvent(event.endOfPhase, phase=phase.main)
+    if not firEvent(event.endOfPhase, phase=phase.main):
+        _scorePhase()
 
 def _scorePhase():
     mute()
     setGlobalVariable("Phase", phase.score.name)
-    fireEvent(event.startOfPhase, pahse=phase.score)
+    fireEvent(event.startOfPhase, phase=phase.score)
     fireEvent(event.scorePhase)
     # Confront step
     problemsConfronted = []
     for card in getCardsInPlay():
-        if cardType.problem in Typelist(card):
-            if canConfront(card, me):
+        if cardType.problem in TypeList(card):
+            if canConfront(card):
                 #TODO: Maybe ask which problem to confront first?
-                problemsConfronted.append(confront(card))
+                if confront(card):
+                    problemsConfronted.append(card)
     # Faceoff Step
     problemsToSolve = []
     if len(problemsConfronted) >= 2:
-        problemsToSolve.append(beginFaceoff(faceoff.double))
+        lst = getCardsAtLocation(location.myProblem) + getCardsAtLocation(location.oppProblem)
+        lst = [c for c in lst if isCharacter(c)]
+        if beginFaceoff(faceoff.double, lst): problemsToSolve = problemsConfronted
     else:
         for card in problemsConfronted:
             if canConfront(card, players[1]):
-                problemsToSolve.append(beginFaceoff(faceoff.problem, problem=card))
+                lst = [c for c in getCardsAtLocation(getLocation(card)) if isCharacter(c)]
+                if beginFaceoff(faceoff.problem, lst):
+                    problemsToSolve.append(card)
     # Solve Step
     for card in problemsToSolve:
-        solveProblem(card)
-    fireEvent(event.endOfPhase, pahse=phase.score)
+        replaceProblem(card)
+    if not fireEvent(event.endOfPhase, phase=phase.score):
+        _endPhase()
 
 def _endPhase():
     mute()
     setGlobalVariable("Phase", phase.end.name)
-    fireEvent(event.startOfPhase, pahse=phase.end)
+    fireEvent(event.startOfPhase, phase=phase.end)
     # End of Turn Step
     fireEvent(event.endPhase)
     disablePPP()
@@ -118,6 +137,11 @@ def _endPhase():
             card = askCard(cardsAtHome, boxTitle, question)
             dicardList.append(cardsAtHome.pop(card))
         retire(dicardList)
-    fireEvent(event.endTurn)
-    fireEvent(event.endOfPhase, pahse=phase.end)
-    setGlobalVariable('firstTurn', 'False')
+    if not fireEvent(event.endOfPhase, phase=phase.end):
+        _passTurn()
+    
+def _passTurn():
+    if not fireEvent(event.endTurn):
+        setGlobalVariable('firstTurn', 'False')
+        setGlobalVariable('turnPlayer', str(players[1]))
+        remoteCall(players[1], '_startTurn', [])
