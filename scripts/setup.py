@@ -11,6 +11,29 @@ def onGameStartSetup():
     setGlobalVariable('firstPlayer', 'None')
     setGlobalVariable('isSetup', 'False')
     me.setGlobalVariable('deckLoaded', 'False')
+    iterGlobals(globals(), "")
+    
+def iterGlobals(gd, ws):
+    for k in gd.iterkeys():
+        if type(gd[k]) == dict:
+            whisper(str(k)+": {")
+            iterGlobals(gd[k], ws+"  ")
+        elif type(gd[k]) == list:
+            whisper(str(k)+": [")
+            iterGlobalsList(gd[k], ws+"  ")
+        else: whisper("{}{}: {},".format(ws, k, gd[k]))
+    whisper("},")
+        
+def iterGlobalsList(gd, ws):
+    for i in range(len(gd)):
+        if type(gd[i]) == dict:
+            whisper("{")
+            iterGlobals(gd[i], ws+"  ")
+        elif type(gd[i]) == list:
+            whisper("[")
+            iterGlobalsList(gd[i], ws+"  ")
+        else: whisper("{}{},".format(ws, gd[i]))
+    whisper("],")
     
 def onDeckLoadSetup(player, groups):
     mute()

@@ -45,7 +45,7 @@ def _troublemakerPhase():
     fireEvent(event.troublemakerPhase)
     # Uncover step
     for card in getCardsInPlay():
-        if cardType.troublemaker in TypeList(card) and card.controler = me:
+        if cardType.troublemaker in TypeList(card) and card.controler == me:
             uncover(card)
     # Challenge Step
     foundTMToChalange = False
@@ -118,7 +118,7 @@ def _endPhase():
     cardsInHand = getCardsAtLocation(location.hand, me)
     dicardList = []
     handLimit = applyModifiers(modifier.handLimit, {'player':me, 'limit':8})['limit']
-    if len(cardsInHand) > handLimit
+    if len(cardsInHand) > handLimit:
         boxTitle = "Too many cards in hand."
         while len(cardsInHand) > handLimit:
             if len(cardsInHand)-handLimit == 1: question = "Choose a card to discard."
@@ -128,7 +128,7 @@ def _endPhase():
         discard(dicardList)
     # Apply home limit
     cardsAtHome = [c for c in getCardsAtLocation(location.home, me) if cardType.friend in TypeList(c)]
-    homeLimit = getHomeLimit(me)
+    homeLimit = getHomeLimit()
     if len(cardsAtHome) > homeLimit:
         boxTitle = "Too many Friends at home."
         while len(cardsAtHome) > homeLimit:
@@ -136,7 +136,7 @@ def _endPhase():
             else: question = "Choose {} Friends to retire.".format(len(cardsAtHome)-homeLimit)
             card = askCard(cardsAtHome, boxTitle, question)
             dicardList.append(cardsAtHome.pop(card))
-        retire(dicardList)
+        retire(dicardList, reason='homeLimit')
     if not fireEvent(event.endOfPhase, phase=phase.end):
         _passTurn()
     

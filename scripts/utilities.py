@@ -1,5 +1,6 @@
 import time
 import re
+import math
 
 #-----------------------------------------------------------------------
 # Globals
@@ -151,7 +152,7 @@ context = {}
 def setContext(**kargs):
     global context
     context = kargs
-    remoteCall(players[1], setContext, [**kargs])
+    # remoteCall(players[1], setContext, [**kargs])
     
 def clearContext():
     global context
@@ -162,14 +163,25 @@ def clearContext():
 # Internal helper functions
 #-----------------------------------------------------------------------
         
-def countTotalPower(player, col = "all"):
+def countTotalPower(player, col = "all", loc = table):
     power = 0
-    for c in table:
+    if cards == table: getCardsInPlay(player)
+    else: cards = getCardsAtLocation(loc, player)
+    invert = False
+    if col != 'all' and col.name[:3] == 'Non':
+        col = color[col.name[:4]]
+        invert = True
+    for c in cards:
         if isCharacter(c):
-            if c.controller == player:
-                cols = col in applyModifiers(modifier.color, {'card':c, 'colors':Colors(c)})['colors']
-                if col == "all" or cols:
-                    power += max(applyModifiers(modifier.power, {'card':c, 'power':Power(c)})['power'], 0)
+            if col == 'all':
+                power += max(Power(c)['power'], 0)
+            else:
+                colors = Colors(c)
+                if invert:
+                    if col not in colors:
+                        power += max(Power(c)['power'], 0)
+                elif col in colors:
+                    power += max(Power(c)['power'], 0)
     return power
     
 def giveControl(lst):
@@ -187,8 +199,96 @@ def canChallenge(card, charactersInvolved=[], player=me):
     return dict['canChallenge'], dict['charactersInvolved']
     
 def canConfront(card, player=me):
-    #TODO: figure out the confront algorithm
-    pass
+    loc = getLocation(card)
+    if card.controller == player: colorReqs = YourRequirements(card, {'player':player})
+    else: colorReqs = OpponentsRequirements(card, {'player':player})
+    for c in colorReqs.iterkeys():
+        if c == color.wild: wildReq = [c, colorReqs[c]]
+        elif countTotalPower(player, c, loc) < colorReqs[c]: return False
+        
+def canConfrontWithCards(card, cardList, player=me):
+    #Setup the function locals we'll need
+    cards = []
+    loc = getLocation(card)
+    if card.controller == player: colorReqs = YourRequirements(card, {'player':player})
+    else: colorReqs = OpponentsRequirements(card, {'player':player})
+    allGroupsSatisfied = True
+    hasWildRequirement = False
+    excessPower = 0
+
+    #Build the list of card's we'll need, in the format we need
+    for card in cardList:
+        cards.append([card, Power(card), Colors(card), False])
+        #The final value in the list is set to True if the card has multiple colors
+        if cards[len(cards)][2] > 1: cards[len(cards)][3] = True
+
+    for col in colorReqs.keys():
+        #Pass if the color is wild, it'll be checked later
+        if col == color.wild:
+            hasWildRequirement = True
+            break
+        #Setup the for-loop locals we'll need
+        groupSatisfied = False
+        group = []
+        reqCol = colorReqs[col]
+        indicesToRemove = []
+        #Add cards that match the color requirement
+        for i in range(len(cards)):
+            if colorMatch(col, cards[i][2]):
+                group.append(cards[i])
+                indicesToRemove.append(i)
+        #Remove matches so that they don't match twice
+        for i in indicesToRemove:
+            del cards[i]
+        #Sort the matches so that those with fewer colors and lower power are checked first.
+        group.sort(None, lambda x: len(x[2])*10+x[1])
+        #Count card's power totals, and return the excess to the pool.
+        indicesToRemove = []
+        for card in group:
+            if reqCol <= 0:
+                cards.append(card)
+                continue
+            reqCol -= card[1]
+            if reqCol <= 0: groupSatisfied = True
+        #Check if the confront requirement has enough power
+        if not groupSatisfied:
+            allGroupsSatisfied = False
+            break
+        else: excessPower += math.fabs(reqCol)
+
+    #Check any wild requirements
+    if hasWildRequirement:
+        groupSatisfied = False
+        col = color.wild
+        reqCol = colorReqs[col]
+        #Count card's power totals.
+        for card in cards:
+            reqCol -= card[1]
+            if reqCol <= 0:
+                groupSatisfied = True
+                break
+        #Check if the confront requirement has enough power
+        if not groupSatisfied: allGroupsSatisfied = False
+
+    return allGroupsSatisfied
+
+#Checks if a match occurs given a list of colors and a color to match to.
+def colorMatch(colorToMatch, colorList, matchWild = False):
+    if colorToMatch == color.wild:
+        if matchWild == True or (len(colorList) == 1 and color.colorless in colorList): return True
+    if colorToMatch.name[:3] == 'Non': return color[colorToMatch.name[:4]] not in colorList
+    return colorToMatch in colorList
+    
+def getHomeLimit(player=me):
+    manes = [c for c in getCardsInPlay(player) if cardType.maneCharacter in TypeList(c)]
+    homeLimit = 0
+    for card in manes:
+        kw = Keywords(card)
+        if keyword.homeLimit in kw:
+            homeLimit += kw[keyword.homeLimit]
+    dict = {'player':player, 'homeLimit':homeLimit}
+    applyModifiers(modifier.homeLimit, dict)
+    return dict['homeLimit']
 
 #-----------------------------------------------------------------------
 # Misc Helper functions
@@ -262,6 +362,9 @@ def ready(card):
         if not fireEvent(preEvent.ready, card=card):
             card.orientation = Rot0
             fireEvent(event.ready, card=card)
+
+def dismiss(cardList):
+    pass
     
 def isCharacter(card):
     if cardType.friend in TypeList(card) or cardType.maneCharacter in TypeList(card):
@@ -271,7 +374,7 @@ def isCharacter(card):
 def getTurnPlayer():
     return Player(eval(setGlobalVariable('turnPlayer')))
     
-def draw(amount=1, player=me note=True):
+def draw(amount=1, player=me, note=True):
     mute()
     if player != me:
         remoteCall(player, 'draw', [amount, player, note])
@@ -296,6 +399,13 @@ def draw(amount=1, player=me note=True):
             if note:
                 if dict['amount'] == 1: notifyAll(infoColor, "{} draws a card.".format(me))
                 else: notifyAll(infoColor, "{} draws {} cards.".format(me,dict['amount']))
+    
+def discard(cardList):
+    if type(cardList) != list: cardList = [cardList]
+    for card in cardList:
+        if not fireEvent(preEvent.discard, card=card):
+            moveToLocation(card, location.discardPile)
+            fireEvent(event.discard, card=card)
 
 def gainAT(amount):
     dict = {'amount':amount}
@@ -303,8 +413,8 @@ def gainAT(amount):
     if dict['amount'] > 0:
         if not fireEvent(preEvent.gainAT, **dict):
             me.counters['AT'].value += dict['amount']
-            if dict['amount'] == 1: notifyAll("{} gains an Actions Token.".format(me)
-            else: notifyAll("{} gains {} Actions Tokens.".format(me, dict['amount'])
+            if dict['amount'] == 1: notifyAll("{} gains an Actions Token.".format(me))
+            else: notifyAll("{} gains {} Actions Tokens.".format(me, dict['amount']))
             fireEvent(event.gainAT, **dict)
             
 def loseAT(amount, spent=False):
@@ -324,9 +434,9 @@ def gainPoints(amount):
     if dict['amount'] > 0:
         if not fireEvent(preEvent.gainPoints, **dict):
             me.counters['Points'].value += dict['amount']
-            if dict['amount'] == 1: notifyAll("{} gains a Point.".format(me)
-            else: notifyAll("{} gains {} Points.".format(me, dict['amount'])
-            fireEvent(event.gainPoints, **dict).
+            if dict['amount'] == 1: notifyAll("{} gains a Point.".format(me))
+            else: notifyAll("{} gains {} Points.".format(me, dict['amount']))
+            fireEvent(event.gainPoints, **dict)
 
 def losePoints(amount):
     dict = {'amount':amount}
@@ -334,8 +444,8 @@ def losePoints(amount):
     if dict['amount'] > 0:
         if not fireEvent(preEvent.losePoints, **dict):
             me.counters['Points'].value += dict['amount']
-            if dict['amount'] == 1: notifyAll("{} loses a Point.".format(me)
-            else: notifyAll("{} loses {} Points.".format(me, dict['amount'])
+            if dict['amount'] == 1: notifyAll("{} loses a Point.".format(me))
+            else: notifyAll("{} loses {} Points.".format(me, dict['amount']))
             fireEvent(event.losePoints, **dict)
 
 def uncover(card):

@@ -9,7 +9,7 @@ preEvent = Enum('preEvent', ['Play Card', 'Click Card', 'Activate Effect', 'Leav
 pahse = Enum('phase', ['Ready', 'Troublemaker', 'Main', 'Score', 'End'])
 
 ##Modifier types
-modifier = Enum('modifier', ['cost', 'power', 'color', 'gainAT', 'loseAT', 'gainPoints', 'losePoints', 'canExhaust', 'canReady', 'canChallenge', 'canConfront'])
+modifier = Enum('modifier', ['cost', 'power', 'color', 'gainAT', 'loseAT', 'gainPoints', 'losePoints', 'canExhaust', 'canReady', 'canChallenge', 'canConfront', 'handLimit'])
 
 ##Card Properties
 property = Enum('property', ['Name', 'Title', 'Subtitle', 'Number', 'Type', 'Traits', 'Colors', 'Power', 'Cost', 'Play Requirements', 'Keywords', 'Text', 'Bonus Points', 'Your Requirements', 'Opponents Requirements', 'Rarity', 'On Game Load', 'Activated List', 'Activated', 'Check Play', 'Pre Play Card', 'Enters Play', 'Leaves Play', 'Flipped', 'Moved', 'Uncovered', 'Confront', 'Replaced'])
@@ -24,11 +24,10 @@ trait = Enum('trait', ['Earth Pony', 'Unicorn', 'Pegasus', 'Alicorn', 'Ally', 'B
 keyword = Enum('keyword', ['Home Limit', 'Caretaker', 'Inspired', 'Prismatic', 'Pumped', 'Random', 'Starting Problem', 'Stubborn', 'Studious', 'Supportive', 'Swift', 'Teamwork', 'Villain'])
 
 ##Card colours
-color = Enum('color', ['Blue', 'Orange', 'Pink', 'Purple', 'White', 'Yellow', 'Colorless'])
+color = Enum('color', ['Blue', 'Orange', 'Pink', 'Purple', 'White', 'Yellow', 'Colorless', 'Wild', 'Non-Blue', 'Non-Orange', 'Non-Pink', 'Non-Purple', 'Non-White', 'Non-Yellow'])
 
-#TODO: Should we merge color and colorRequirement?
 ##Problem Requirements
-colorRequirement = Enum('colorRequirement', ['Blue', 'Orange', 'Pink', 'Purple', 'White', 'Yellow', 'Wild', 'Harmony', 'Non-Blue', 'Non-Orange', 'Non-Pink', 'Non-Purple', 'Non-White', 'Non-Yellow'])
+# colorRequirement = Enum('colorRequirement', ['Blue', 'Orange', 'Pink', 'Purple', 'White', 'Yellow', 'Wild', 'Harmony', 'Non-Blue', 'Non-Orange', 'Non-Pink', 'Non-Purple', 'Non-White', 'Non-Yellow'])
 
 ##Zone locations
 location = Enum('location', ['Home', 'My Problem', 'Opp Problem', 'Deck', 'Problem Deck', 'Hand', 'Discard Pile', 'Banished Pile', 'Queue'])
