@@ -3,7 +3,7 @@
 #-----------------------------------------------------------------------
 
 def endPhase(group, x=0, y=0):
-    curPhase = phase[getGlobalVariable("Phase", phase.ready.name)]
+    curPhase = phase[getGlobalVariable("Phase")]
     if not fireEvent(event.endPhase, phase=curPhase):
         if curPhase == phase.ready: _troublemakerPhase()
         elif curPhase == phase.troublemaker: _mainPhase()
@@ -26,7 +26,9 @@ def _readyPhase():
     # Ready Step
     for card in getCardsInPlay(me): ready(card)
     # Action Step
-    higestPoints = max(me.counters['Points'].value, players[1].counters['Points'].value)
+    try: highestPoints = max(me.counters['Points'].value, players[1].counters['Points'].value)
+    except IndexError:
+        if devMode: highestPoints = me.counters['Points'].value
     if highestPoints >= 11: AtToGain = 5
     elif highestPoints >= 6: AtToGain = 4
     elif highestPoints >= 3: AtToGain = 3
@@ -34,7 +36,7 @@ def _readyPhase():
     gainAT(AtToGain)
     enablePPP()
     # Draw Step
-    if not eval(getGlobalVariable('firstTurn')): draw()
+    if not eval(getGlobalVariable('FirstTurn')): draw()
     if not fireEvent(event.endPhase, phase=phase.ready):
         _troublemakerPhase()
 
@@ -62,7 +64,7 @@ def _troublemakerPhaseEnd():
 def _mainPhase():
     mute()
     setGlobalVariable("Phase", phase.main.name)
-    firEvent(event.startOfPhase, phase=phase.main)
+    fireEvent(event.startOfPhase, phase=phase.main)
     fireEvent(event.mainPhase)
     # Main phase actions (in any order):
         # Play a card

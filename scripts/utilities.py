@@ -294,13 +294,13 @@ def getHomeLimit(player=me):
 # Misc Helper functions
 #-----------------------------------------------------------------------
 
-def notifyAll(col, message, alsoLog=True):
+def notifyAll(message, col=infoColor, alsoLog=True):
     mute()
     if alsoLog: notify(message)
     for p in players:
         remoteCall(p, 'notifyBar', [col,message+longSpace])
         
-def whisperBar(col, message):
+def whisperBar(message, col=infoColor):
     mute()
     notifyBar(col, message+longSpace)
     whisper(message)
@@ -345,8 +345,8 @@ def canReady(card):
     
 def exhaust(card):
     mute()
-    if card.controler != me:
-        remoteCall(card.controler, 'exhaust', [card])
+    if card.controller != me:
+        remoteCall(card.controller, 'exhaust', [card])
         return
     if canExhaust(card):
         if not fireEvent(preEvent.exhaust, card=card):
@@ -355,8 +355,8 @@ def exhaust(card):
     
 def ready(card):
     mute()
-    if card.controler != me:
-        remoteCall(card.controler, 'ready', [card])
+    if card.controller != me:
+        remoteCall(card.controller, 'ready', [card])
         return
     if canReady(card):
         if not fireEvent(preEvent.ready, card=card):

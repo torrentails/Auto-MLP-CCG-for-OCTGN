@@ -285,7 +285,7 @@ def readProperty(card, prop, asList=False, args_dict={}, applyMods=True):
     val = cardDefaults[card._id][int(isBoosted(card))][prop]
     if applyMods:
         if type(val) == dict: val = val.copy()
-        elif type(val) == list val = list(val)
+        elif type(val) == list: val = list(val)
         args_dict['value'] = val
         args_dict['card'] = card
         val = applyModifiers(property[prop], args_dict)['value']

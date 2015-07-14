@@ -71,7 +71,8 @@ def getCardsAtLocation(loc, player=None):
     
 def getCardsInPlay(player=None):
     lst = locations[2][location.home]+locations[2][location.myProblem]+locations[2][location.oppProblem]
-    if player: return [c for c in lst if c.controler == player]
+    lst = [Card(c) for c in lst]
+    if player: return [c for c in lst if c.controller == player]
     return lst
 
 def isInPlay(card=None):

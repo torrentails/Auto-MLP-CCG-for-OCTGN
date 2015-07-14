@@ -6,10 +6,10 @@ event = Enum('event', ['Start of Phase', 'End of Phase', 'Start Turn', 'End Turn
 preEvent = Enum('preEvent', ['Play Card', 'Click Card', 'Activate Effect', 'Leave Play', 'Draw', 'gainAT', 'loseAT', 'gainPoints', 'losePoints'])
 
 ##Phases
-pahse = Enum('phase', ['Ready', 'Troublemaker', 'Main', 'Score', 'End'])
+phase = Enum('phase', ['Ready', 'Troublemaker', 'Main', 'Score', 'End'])
 
 ##Modifier types
-modifier = Enum('modifier', ['cost', 'power', 'color', 'gainAT', 'loseAT', 'gainPoints', 'losePoints', 'canExhaust', 'canReady', 'canChallenge', 'canConfront', 'handLimit'])
+modifier = Enum('modifier', ['cost', 'power', 'color', 'gainAT', 'loseAT', 'gainPoints', 'losePoints', 'canExhaust', 'canReady', 'canChallenge', 'canConfront', 'handLimit', 'drawCard'])
 
 ##Card Properties
 property = Enum('property', ['Name', 'Title', 'Subtitle', 'Number', 'Type', 'Traits', 'Colors', 'Power', 'Cost', 'Play Requirements', 'Keywords', 'Text', 'Bonus Points', 'Your Requirements', 'Opponents Requirements', 'Rarity', 'On Game Load', 'Activated List', 'Activated', 'Check Play', 'Pre Play Card', 'Enters Play', 'Leaves Play', 'Flipped', 'Moved', 'Uncovered', 'Confront', 'Replaced'])
