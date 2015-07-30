@@ -4,7 +4,7 @@
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     id="a953003d-3075-4b56-8f6f-1122b7fa94bd"
     octgnVersion="3.1.163.361"
-    version="0.3.1.5"
+    version="0.3.2.3"
     scriptVersion="3.1.0.1"
     markersize="16"
     tags="My Little Pony auto automatic MLP CCG"
@@ -19,14 +19,16 @@
     <script src="scripts/uuid.py" />
     <script src="scripts/utilities.py" />
     <script src="scripts/enums.py" />
-    <script src="scripts/markers.py" />
+    <script src="scripts/gamestate.py" />
+    <script src="scripts/card.py" />
     <script src="scripts/eventsAndPPP.py" />
     <script src="scripts/modifiers.py" />
-    <script src="scripts/cardPropertyManagement.py" />
+    <!--<script src="scripts/cardPropertyManagement.py" />-->
     <script src="scripts/zoneManagement.py" />
     <script src="scripts/actions.py" />
     <script src="scripts/setup.py" />
     <script src="scripts/turnControl.py" />
+    <script src="scripts/markers.py" />
   </scripts>
 
   <events>
@@ -63,10 +65,10 @@
     <globalvariable name="hasPriority" value="None" />
   </globalvariables>
 
-    <!--The full name of the card (title + subtitle) should be stored in the name attribute-->
-    <card back="images/card_back.png" front="images/card_front.png" width="84" height="117" cornerRadius="4">
+  <!--The full name of the card (title + subtitle) should be stored in the name attribute-->
+  <card back="images/card_back.png" front="images/card_front.png" width="84" height="117" cornerRadius="4">
     <!--Stores the card's title-->
-    <!--<property name="Title" type="String" hidden="True" />-->
+    <property name="Title" type="String" hidden="True" />
     <!--Stores the names subtitle if any-->
     <property name="Subtitle" type="String" hidden="True" />
     <!--Stores the card's number with leading zeroes eg. 001-->
@@ -83,7 +85,7 @@
     <property name="Cost" type="String" />
     <!--Comma separated play requirements; eg. 4 Orange-->
     <property name="PlayRequirements" type="String" />
-    <!--Comma separated play requirements-->
+    <!--Comma separated Keywords-->
     <property name="Keywords" type="String" />
     <!--Text on the card; use &#10; for a line break-->
     <property name="Text" type="String" />
@@ -95,29 +97,8 @@
     <property name="OpponentsRequirements" type="String" />
     <!--Abbreviated rarity of the card; eg. UR, C, P, etc.-->
     <property name="Rarity" type="String" />
-    <!--Executed when the card is loaded-->
-    <property name="OnGameLoad" type="String" hidden="True" />
-    <!--Executed when the game checks if the card's effect can be activated-->
-    <property name="ActivatedList" type="String" hidden="True" />
-    <!--Executed when the card's effect is activated-->
-    <property name="Activated" type="String" hidden="True" />
-    <!--Used to check for additional play requirements of the card-->
-    <property name="CheckPlay" type="String" hidden="True" />
-    <property name="PrePlayCard" type="String" hidden="True" />
-    <!--Executed when the card enters play-->
-    <property name="EntersPlay" type="String" hidden="True" />
-    <property name="LeavesPlay" type="String" hidden="True" />
-    <!--Executed only when the card is flipped during a faceoff-->
-    <property name="Flipped" type="String" hidden="True" />
-    <!--Called when the card changes location, such as moving to another problem or being drawn into hand-->
-    <!--<property name="ChangeLocation" type="String" hidden="True" />-->
-    <property name="Moved" type="String" hidden="True" />
-    <!--Called when a problem or troublemaker is turned face up, or when a friend is rallied-->
-    <property name="Uncovered" type="String" hidden="True" />
-    <!--Called on each card at a problem when that problem is confronted-->
-    <property name="Confront" type="String" hidden="True" />
-    <!--Called on each card at a problem when that problem is replaced-->
-    <property name="Replaced" type="String" hidden="True" />
+    <!--The class singleton that must inherit from Effect_Base, and assigned to cls-->
+    <property name="EffectClass" type="String" hidden="True" />
     <size name="Problem" back="images/card_back.png" front="images/card_front.png" width="117" height="84" cornerRadius="4" />
   </card>
 

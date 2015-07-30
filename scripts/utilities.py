@@ -2,6 +2,33 @@ import time
 import re
 import math
 
+# crdlst = {}
+
+# CardBase = Card
+
+# def Card(id):
+    # try:
+        # if id in crdlst:
+            # whisper('Card found.')
+        # return crdlst[id]
+    # except KeyError:
+        # whisper('creating new card instance')
+        # return _Card(id)
+
+# class _Card(CardBase):
+    # # def __new__(cls, id):
+        # # try:
+            # # return crdlst[id]
+            # # whisper('Card found.')
+        # # except KeyError:
+            # # whisper('creating new card instance')
+            # # CardBase.__new__(cls, id)
+    # def __init__(self, id):
+        # if id not in crdlst:
+            # CardBase.__init__(self, id)
+            # crdlst[id] = self
+        # whisper('{} {}'.format(self._id, repr(self)))
+
 #-----------------------------------------------------------------------
 # Globals
 #-----------------------------------------------------------------------
@@ -381,14 +408,14 @@ def draw(amount=1, player=me, note=True):
         return
     deck = me.deck
     if len(deck) == 0:
-        whisperBar(warnColor, "You don't have any cards in your {} to draw.".format(deck.name))
+        whisperBar("You don't have any cards in your {} to draw.".format(deck.name), warnColor)
         return
     dict={'amount':amount}
     applyModifiers(modifier.drawCard, dict)
     if dict['amount'] > 0:
         if not fireEvent(preEvent.draw, **dict):
             if len(deck) < dict['amount']:
-                whisperBar(errorColor, "Ran out of cards in your {} to draw.".format(deck.name))
+                whisperBar("Ran out of cards in your {} to draw.".format(deck.name), errorColor)
                 dict['amount'] = len(deck)
             disablePPP()
             for card in deck.top(dict['amount']):
@@ -397,8 +424,8 @@ def draw(amount=1, player=me, note=True):
                 fireEvent(event.draw, **dict)
             enablePPP()
             if note:
-                if dict['amount'] == 1: notifyAll(infoColor, "{} draws a card.".format(me))
-                else: notifyAll(infoColor, "{} draws {} cards.".format(me,dict['amount']))
+                if dict['amount'] == 1: notifyAll("{} draws a card.".format(me))
+                else: notifyAll("{} draws {} cards.".format(me,dict['amount']))
     
 def discard(cardList):
     if type(cardList) != list: cardList = [cardList]
