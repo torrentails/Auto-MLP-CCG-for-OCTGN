@@ -47,7 +47,7 @@ class _Card(object):
         self._effect_ = load_effect_class(c.EffectClass)
         
         # Setup a few other things
-        self._applied_modifiers_ = []
+        # self._applied_modifiers_ = []
         self._modifiers_ = []
         self._location_ = location.deck
         
@@ -290,8 +290,11 @@ class _Card(object):
     def new_modifier(self, modifier_type):
         mod = Modifier(self, modifier_type)
         self._modifiers_.append(mod)
-        self._applied_modifiers_.append(mod)
+        # self._applied_modifiers_.append(mod)
         return mod
+        
+    def _apply_modifiers(self, modifier_type, arg):
+        return apply_modifiers(self, modifier_type, arg)
     
     # Directly accessible methods
     def is_character(self):
