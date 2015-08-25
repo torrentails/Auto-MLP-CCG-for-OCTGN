@@ -2,6 +2,13 @@
 # Event bus management
 #-----------------------------------------------------------------------
 
+# def remove_on_event(self, e):
+    # evt = new_event(e)
+    # evt.event = self
+    # def action(self, *args): self.event.destroy()
+    # evt.action = action
+    # evt.fire_once = True
+
 #Event bus
 eventBus = {}
 delayedEvents = []

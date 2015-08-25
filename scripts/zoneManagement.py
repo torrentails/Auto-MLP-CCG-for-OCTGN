@@ -75,8 +75,8 @@ def getCardsInPlay(player=None):
     if player: return [c for c in lst if c.controller == player]
     return lst
 
-def isInPlay(card=None):
-    return isTable(getLocation(card))
+# def isInPlay(card=None):
+    # return isTable(getLocation(card))
             
 def getLocationFromCords(x, y=None):
     if y == None:
@@ -86,11 +86,11 @@ def getLocationFromCords(x, y=None):
         z = zones[zone]['bounds'][invert]
         if z['x1'] < x < z['x2'] and z['y1'] < y < z['y2']: return zone
     
-def getGroupFromLocation(p, loc):
+def getGroupFromLocation(loc, player=me):
     if isTable(loc): return table
-    if loc == location.hand: return p.hand
-    if loc == location.deck: return p.deck
-    return p.piles[loc.name]
+    if loc == location.hand: return player.hand
+    if loc == location.deck: return player.deck
+    return player.piles[loc.name]
     
 def setLocation(card, loc, organize=True, sync=True):
     for k in iter(locations[0]):

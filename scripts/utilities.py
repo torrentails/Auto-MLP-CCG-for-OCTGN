@@ -2,33 +2,6 @@ import time
 import re
 import math
 
-# crdlst = {}
-
-# CardBase = Card
-
-# def Card(id):
-    # try:
-        # if id in crdlst:
-            # whisper('Card found.')
-        # return crdlst[id]
-    # except KeyError:
-        # whisper('creating new card instance')
-        # return _Card(id)
-
-# class _Card(CardBase):
-    # # def __new__(cls, id):
-        # # try:
-            # # return crdlst[id]
-            # # whisper('Card found.')
-        # # except KeyError:
-            # # whisper('creating new card instance')
-            # # CardBase.__new__(cls, id)
-    # def __init__(self, id):
-        # if id not in crdlst:
-            # CardBase.__init__(self, id)
-            # crdlst[id] = self
-        # whisper('{} {}'.format(self._id, repr(self)))
-
 #-----------------------------------------------------------------------
 # Globals
 #-----------------------------------------------------------------------
@@ -47,6 +20,25 @@ warnColor = '#7F7F00'       #Used for warnings, unable to take an action, etc.
 queryColor = '#00007F'      #Used to indicate action needs to be taken, select a card, etc.
 
 #-----------------------------------------------------------------------
+# Custom Exceptions
+#-----------------------------------------------------------------------
+class StaticAttributeError(TypeError):
+	def __init__(self, *args):
+		TypeError.__init__(self, *args)
+        
+class IncorrectCommandType(TypeError):
+    def __init__(self, *args):
+        TypeError.__init__(self, *args)
+        
+class ResponseTimeout(Exception):
+    def __init__(self, *args):
+        Exception.__init__(self, *args)
+        
+class NoEffectDeffined(NotImplementedError):
+    def __init__(self, *args):
+        NotImplementedError.__init__(self, *args)
+
+#-----------------------------------------------------------------------
 # Enumeration class
 # Licensed under the GNU LGPL V3. See for more info:
 # https://github.com/torrentails/Python-2.x-Enumeration-Class
@@ -59,6 +51,7 @@ class Enum_Item(object):
     def __init__(self, name, type):
         self._name = name
         self._type = type
+        self._initiated = True
     def __getattr__(self, name):
         if name == 'name':
             return self._name
@@ -67,7 +60,7 @@ class Enum_Item(object):
         else: raise AttributeError("No such attribute on 'Enum_Item' object.", name)
     def __setattr__(self, name, value):
         if self._initiated:
-            raise NotImplementedError("'Enum_Item' object does not support attribute assignment", name, value)
+            raise TypeError("'Enum_Item' object does not support attribute assignment", name, value)
         else: super(Enum_Item, self).__setattr__(name, value)
 
 #Define the enum class
@@ -75,9 +68,8 @@ class Enum(object):
     _d = {}
     _name = ''
     _initiated = False
-    def __init__(self, name, *enums):
+    def __init__(self, name, enums):
         if type(name) != str: raise ValueError("Invalid name for object 'Enum'", name)
-        if type(enums[0]) == list: enums = enums[0]
         for i in enums:
             if type(i) != str: raise TypeError("Enum values must be a string.", i)
             if enums.count(i) > 1: raise ValueError("Duplicate values not allowed.", i)
@@ -93,12 +85,18 @@ class Enum(object):
             raise
     def __setattr__(self, a, v):
         if self._initiated:
-            raise NotImplementedError("'Enum' object does not support attribute assignment")
+            raise TypeError("'Enum' object does not support attribute assignment")
         else: super(Enum, self).__setattr__(a, v)
     def __getitem__(self, k):
         return self._d[k.upper().replace(' ','')]
     def __name__(self):
         return self._name
+    def __iter__(self):
+        i = 0 
+        l = self._d.values()
+        while i < len(l):
+            yield l[i]
+            i+=1
 
 #-----------------------------------------------------------------------
 # Script loading and dispatcher functions
@@ -236,7 +234,7 @@ def canConfront(card, player=me):
 def canConfrontWithCards(card, cardList, player=me):
     #Setup the function locals we'll need
     cards = []
-    loc = getLocation(card)
+    loc = card.location
     if card.controller == player: colorReqs = YourRequirements(card, {'player':player})
     else: colorReqs = OpponentsRequirements(card, {'player':player})
     allGroupsSatisfied = True
@@ -253,7 +251,7 @@ def canConfrontWithCards(card, cardList, player=me):
         #Pass if the color is wild, it'll be checked later
         if col == color.wild:
             hasWildRequirement = True
-            break
+            continue
         #Setup the for-loop locals we'll need
         groupSatisfied = False
         group = []
@@ -265,7 +263,7 @@ def canConfrontWithCards(card, cardList, player=me):
                 group.append(cards[i])
                 indicesToRemove.append(i)
         #Remove matches so that they don't match twice
-        for i in indicesToRemove:
+        for i in indicesToRemove.reverse():
             del cards[i]
         #Sort the matches so that those with fewer colors and lower power are checked first.
         group.sort(None, lambda x: len(x[2])*10+x[1])
@@ -332,8 +330,8 @@ def whisperBar(message, col=infoColor):
     notifyBar(col, message+longSpace)
     whisper(message)
     
-def isBoosted(card):
-    return card.alternate == "Mane Character Boosted"
+# def isBoosted(card):
+    # return card.alternate == "Mane Character Boosted"
 
 def shuffle(group=None):
     if group: group.shuffle()
@@ -345,30 +343,30 @@ def isPhase(p):
 def isMyPhase(p):
     return isPhase(p) and me.isActivePlayer()
     
-def isExhausted(card, truefalse):
-    typList = TypeList(card)
-    if cardType.resource in typList or cardType.troublemaker in typList or isCharacter(card):
-        if isInPlay(card):
-            return card.orientation & Rot90 == Rot90
-    if truefalse: return False
-    return None
+# def isExhausted(card, truefalse):
+    # typList = TypeList(card)
+    # if cardType.resource in typList or cardType.troublemaker in typList or isCharacter(card):
+        # if isInPlay(card):
+            # return card.orientation & Rot90 == Rot90
+    # if truefalse: return False
+    # return None
     
-def isReady(card, truefalse=False):
-    ex = isExhausted(card, truefalse)
-    if ex == None:
-        if trueFalse: return False
-        else: return ex
-    return not ex
+# def isReady(card, truefalse=False):
+    # ex = isExhausted(card, truefalse)
+    # if ex == None:
+        # if trueFalse: return False
+        # else: return ex
+    # return not ex
     
-def canExhaust(card):
-    if isReady(card, True) == True:
-        return applyModifiers(modifier.canExhaust, {'card':card, 'isReady':True})['isReady']
-    return False
+# def canExhaust(card):
+    # if isReady(card, True) == True:
+        # return applyModifiers(modifier.canExhaust, {'card':card, 'isReady':True})['isReady']
+    # return False
     
-def canReady(card):
-    if isExhausted(card, True) == True:
-        return applyModifiers(modifier.canReady, {'card':card, 'isExhausted':True})['isExhausted']
-    return False
+# def canReady(card):
+    # if isExhausted(card, True) == True:
+        # return applyModifiers(modifier.canReady, {'card':card, 'isExhausted':True})['isExhausted']
+    # return False
     
 def exhaust(card):
     mute()
@@ -390,13 +388,13 @@ def ready(card):
             card.orientation = Rot0
             fireEvent(event.ready, card=card)
 
-def dismiss(cardList):
-    pass
+# def dismiss(cardList):
+    # pass
     
-def isCharacter(card):
-    if cardType.friend in TypeList(card) or cardType.maneCharacter in TypeList(card):
-        return cardType.character
-    else: return False
+# def isCharacter(card):
+    # if cardType.friend in TypeList(card) or cardType.maneCharacter in TypeList(card):
+        # return cardType.character
+    # else: return False
     
 def getTurnPlayer():
     return Player(eval(setGlobalVariable('turnPlayer')))
