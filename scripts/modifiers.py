@@ -1,30 +1,34 @@
 import copy
 
 modifier_list = []
-# delayedModifiers = []
+modifiers_to_remove = set()
+iterating_modifiers = 0
 
-def apply_modifiers(obj, modifier_type, arg, applied_modifiers=[]):
+def apply_modifiers(obj, modifier_type, arg, applied_modifiers=set()):
+    global iterating_modifiers
+    iterating_modifiers += 1
     arg = copy.deepcopy(arg)
     changed = False
     for mod in modifier_list:
         if mod not in applied_modifiers:
-            if mod.type == modifier_type:
+            if mod.enabled and mod.type == modifier_type:
                 if self in mod.apply_list:
                     if mod.condition(obj):
-                        applied_modifiers.append(mod)
+                        applied_modifiers.add(mod)
                         old_arg = copy.deepcopy(arg)
                         arg = mod.action(obj, arg)
                         if not changed and arg != old_arg: changed = True
     if changed:
         arg = apply_modifiers(obj, modifier_type, arg, applied_modifiers)
+    iterating_modifiers -= 1
+    if not iterating_modifiers:
+        remove_pending_modifiers()
     return arg
     
-# def enableDelayedModifiers():
-    # global delayedModifiers
-    # for m in delayedModifiers:
-        # m.enable()
-    # delayedModifiers = []
-
+def remove_pending_modifiers():
+    for mod in modifiers_to_remove:
+        mod.remove()
+        
 class Modifier():
     def __init__(self, card, modifier_type):
         def foo(*args): pass
@@ -32,11 +36,8 @@ class Modifier():
         self._modifier_type_ = modifier_type
         self._condition_ = foo
         self._action_ = foo
-        self._remove_on_event_ = None
         self._remove_on_new_instance_ = True
-        # self._apply_once_ = False
         self._applies_to_ = [card]
-        # self._being_applied_to_ = [card]
         self._enabled_ = True
         modifier_list.append(self)
         return(self)
@@ -83,17 +84,9 @@ class Modifier():
         self._action_ = func
     action = parameter(get_action, set_action)
     
-    def get_remove_on_event(self): return self._remove_on_event_
-    def set_remove_on_event(self, evt): self._remove_on_event_ = evt
-    remove_on_event = parameter(get_remove_on_event, set_remove_on_event)
-    
     def get_remove_on_new_instance(self): return self._remove_on_new_instance_
     def set_remove_on_new_instance(self, bool): self._remove_on_new_instance_ = bool
     remove_on_new_instance = parameter(get_remove_on_new_instance, set_remove_on_new_instance)
-    
-    # def get_apply_once(self): return self._apply_once_
-    # def set_apply_once(self, bool): self._apply_once_ = bool
-    # apply_once = parameter(get_apply_once, set_apply_once)
     
     def get_applies_to(self): return self._applies_to_
     def set_applies_to(self, lst):
@@ -107,15 +100,11 @@ class Modifier():
     enabled = property(get_enabled, set_enabled)
     
     # Methods
-    # def update_apply_list(self):
-        # old = self._being_applied_to_
-        # new = self.get_apply_list(self)
-        # for i in old:
-            # if i not in new:
-                # old.remove(i)
-        # for i in new:
-            # if i not in old:
-                # old.append(i)
-    
-    def apply(self):
-        pass
+    def remove(self):
+        self.enabled = False
+        global iterating_modifiers
+        if iterating_modifiers:
+            modifiers_to_remove.add(self)
+        else:
+            modifier_list.remove(self)
+            self.owner.remove_modifier(self, True)

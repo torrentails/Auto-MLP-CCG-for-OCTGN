@@ -293,6 +293,12 @@ class _Card(object):
         # self._applied_modifiers_.append(mod)
         return mod
         
+    def remove_modifier(self, mod, issued_by_mod=False):
+        if issued_by_mod:
+            self._modifiers_.remove(mod)
+        else:
+            mod.remove()
+        
     def _apply_modifiers(self, modifier_type, arg):
         return apply_modifiers(self, modifier_type, arg)
     
