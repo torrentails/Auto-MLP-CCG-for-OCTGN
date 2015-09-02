@@ -4,7 +4,7 @@
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     id="a953003d-3075-4b56-8f6f-1122b7fa94bd"
     octgnVersion="3.1.163.361"
-    version="0.3.1.5"
+    version="0.3.2.3"
     scriptVersion="3.1.0.1"
     markersize="16"
     tags="My Little Pony auto automatic MLP CCG"
@@ -19,14 +19,16 @@
     <script src="scripts/uuid.py" />
     <script src="scripts/utilities.py" />
     <script src="scripts/enums.py" />
-    <script src="scripts/markers.py" />
+    <script src="scripts/gamestate.py" />
+    <script src="scripts/card.py" />
     <script src="scripts/eventsAndPPP.py" />
     <script src="scripts/modifiers.py" />
-    <script src="scripts/cardPropertyManagement.py" />
+    <!--<script src="scripts/cardPropertyManagement.py" />-->
     <script src="scripts/zoneManagement.py" />
     <script src="scripts/actions.py" />
     <script src="scripts/setup.py" />
     <script src="scripts/turnControl.py" />
+    <script src="scripts/markers.py" />
   </scripts>
 
   <events>
@@ -53,48 +55,56 @@
     <globalvariable name="devMode" value="True" />
     <globalvariable name="FirstTurn" value="True" />
     <globalvariable name="FirstPlayer" value="None" />
-    <globalvariable name="TurnStarted" value="False" />
-    <globalvariable name="Phase" value="Start" />
+    <globalvariable name="Phase" value="None" />
     <globalvariable name="playingCard_player" value="None" />
     <globalvariable name="playingCard_card" value="None" />
     <globalvariable name="playingCard_cost" value="None" />
     <globalvariable name="isSetup" value="None" />
+    <globalvariable name="turnPlayer" value="None" />
+    <globalvariable name="PPP" value="False" />
     <globalvariable name="hasPriority" value="None" />
   </globalvariables>
 
-    <card back="images/card_back.png" front="images/card_front.png" width="84" height="117" cornerRadius="4">
-    <property name="Subtitle" type="String" />
+  <!--The full name of the card (title + subtitle) should be stored in the name attribute-->
+  <card back="images/card_back.png" front="images/card_front.png" width="84" height="117" cornerRadius="4">
+    <!--Stores the card's title-->
+    <property name="Title" type="String" hidden="True" />
+    <!--Stores the names subtitle if any-->
+    <property name="Subtitle" type="String" hidden="True" />
+    <!--Stores the card's number with leading zeroes eg. 001-->
     <property name="Number" type="String" />
+    <!--The type of card; problem, friend, event, etc.-->
     <property name="Type" type="String" />
+    <!--Comma separated card traits; Unicorn, Showdown, etc.-->
     <property name="Traits" type="String" />
+    <!--Comma separated colors of the card if any. Use 'Colorless' for colorless friends otherwise blank-->
     <property name="Colors" type="String" />
+    <!--Power value if any-->
     <property name="Power" type="String" />
+    <!--Cost value if any-->
     <property name="Cost" type="String" />
+    <!--Comma separated play requirements; eg. 4 Orange-->
     <property name="PlayRequirements" type="String" />
+    <!--Comma separated Keywords-->
     <property name="Keywords" type="String" />
+    <!--Text on the card; use &#10; for a line break-->
     <property name="Text" type="String" />
+    <!--Points awarded for confronting or defeating the card-->
     <property name="BonusPoints" type="String" />
+    <!--Comma separated confront requirements; eg. 3 Pink, 4 Non-Pink-->
     <property name="YourRequirements" type="String" />
+    <!--Comma separated confront requirements; eg. 7 Wild-->
     <property name="OpponentsRequirements" type="String" />
+    <!--Abbreviated rarity of the card; eg. UR, C, P, etc.-->
     <property name="Rarity" type="String" />
-    <property name="OnGameLoad" type="String" hidden="True" />
-    <property name="ActivatedList" type="String" hidden="True" />
-    <property name="Activated" type="String" hidden="True" />
-    <property name="CheckPlay" type="String" hidden="True" />
-    <property name="PrePlayCard" type="String" hidden="True" />
-    <property name="EntersPlay" type="String" hidden="True" />
-    <property name="LeavesPlay" type="String" hidden="True" />
-    <property name="Flipped" type="String" hidden="True" />
-    <property name="Moved" type="String" hidden="True" />
-    <property name="Uncovered" type="String" hidden="True" />
-    <property name="Confront" type="String" hidden="True" />
-    <property name="Replaced" type="String" hidden="True" />
+    <!--The class singleton that must inherit from Effect_Base, and assigned to cls-->
+    <property name="EffectClass" type="String" hidden="True" />
     <size name="Problem" back="images/card_back.png" front="images/card_front.png" width="117" height="84" cornerRadius="4" />
   </card>
 
   <table name="Table" visibility="undefined" ordered="False" width="1280" height="720" board="images/bg.png" background="images/bg.png" backgroundStyle="uniformToFill">
   
-    <cardaction menu="Activate" shortcut="SPACE" default="True" execute="activate" />
+    <cardaction menu="Activate" shortcut="SPACE" execute="activate" />
     <groupaction menu="End phase" shortcut="tab" execute="endPhase" />
     <groupaction menu="Declare response" shortcut="CTRL+SPACE" execute="declareResponse" />
     <groupaction menu="Cancel playing card" shortcut="ESC" execute="cancelPlayingCard" />
@@ -108,11 +118,11 @@
     <counter name="AT" default="0" icon="images/AT.png" />
 
     <hand name="Hand" visibility="me" ordered="False" width="84" height="117" icon="images/placeholder.png">
-      <cardaction menu="Play Card" shortcut="SPACE" default="True" execute="tryPlayCard" />
+      <cardaction menu="Play Card" shortcut="SPACE" execute="tryPlayCard" />
     </hand>
 
     <group name="Deck" visibility="none" width="84" height="117" icon="images/placeholder.png">
-      <groupaction menu="Draw a card" shortcut="CTRL+D" default="True" execute="payToDraw" />
+      <groupaction menu="Draw a card" shortcut="CTRL+D" execute="payToDraw" />
     </group>
 
     <group name="Problem Deck" visibility="none" width="84" height="117" icon="images/placeholder.png">

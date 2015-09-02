@@ -1,0 +1,26 @@
+﻿<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<deck game="a953003d-3075-4b56-8f6f-1122b7fa94bd" sleeveid="0">
+  <section name="Mane Character" shared="False">
+    <card qty="1" id="57925aaa-fd6f-4fe6-abdb-8ab0f678c223">Fluttershy</card>
+  </section>
+  <section name="Friends" shared="False">
+    <card qty="1" id="d9daa401-438a-434a-8b0f-29f5ea504332">Fluttershy</card>
+    <card qty="1" id="cfca3b3c-2b63-460a-b7b8-abfc18811368">Blue Jay</card>
+    <card qty="2" id="f692c999-91d8-46c5-89d9-f8cf72d4b443">Cloudchaser</card>
+    <card qty="1" id="3a3d442b-ea4d-4a0e-98c2-b008b45f2498">Berry Dreams</card>
+    <card qty="1" id="57b71984-d338-44d8-b750-31f4e39937b0">Screwy</card>
+    <card qty="2" id="08b4bc6f-95ec-4edf-b7f0-755349a70174">Hummingway</card>
+  </section>
+  <section name="Resources" shared="False">
+    <card qty="1" id="a63ba886-ba91-4fcf-a67b-1e2b41511cf0">Critter Cuisine</card>
+  </section>
+  <section name="Events" shared="False">
+    <card qty="2" id="6f203774-97cf-4c46-acd8-70124d6d612b">Let's Get This Party Started</card>
+    <card qty="2" id="56213c1e-a5c0-4b85-99e4-a3f95d08ae82">Spread Your Wings</card>
+  </section>
+  <section name="Problems" shared="False">
+    <card qty="1" id="817af21e-4bd7-4535-9640-8c1ee9e2e19a">Special Delivery!</card>
+  </section>
+  <section name="Troublemakers" shared="False" />
+  <notes><![CDATA[]]></notes>
+</deck>

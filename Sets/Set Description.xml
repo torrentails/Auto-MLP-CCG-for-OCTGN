@@ -1,11 +1,12 @@
-<!--Any field that is not present on a card must be left blank with a double quote ""
-Flavour text is omitted as it has no effect on gameplay and will only clutter up the proxygen-->
+<!--Any field that is not present on a card must be left blank with a double quote '""
+Flavour text is omitted as it has no effect on gameplay and will only clutter up the proxygen.
+All fields, with the exception must not have any trailing period.-->
 
-<!--Name is the card's title, id is a UUID-->
+<!--The full name of the card (title + subtitle); id is a UUID-->
 <card name="" id="">
-  <!--The cards Subtitle-->
+  <property name="Title" value=""/>
   <property name="Subtitle" value=""/>
-  <!--The cards number. Do not include the #, include P for promos and ƒ or &#131; for foils-->
+  <!--Do not include the #, include P for promos and ƒ or &#131; for foils-->
   <property name="Number" value=""/>
   <!--Card type: Mane Character, Friend, Event, Resource, Troublemaker or Problem-->
   <property name="Type" value=""/>
@@ -13,53 +14,28 @@ Flavour text is omitted as it has no effect on gameplay and will only clutter up
   <property name="Traits" value=""/>
   <!--Comma separated color values; use "Colorless" for colorless friends-->
   <property name="Colors" value=""/>
-  <!--The cards power value-->
   <property name="Power" value=""/>
-  <!--The cards cost to play-->
   <property name="Cost" value=""/>
   <!--Comma separated color play requirements, in the form of "X Color" where X is the required amount of color-->
   <property name="PlayRequirements" value=""/>
-  <!--Comma separated keywords, be sure to leave off any full stop at the end-->
+  <!--Comma separated keywords-->
   <property name="Keywords" value=""/>
   <!--The card text, minus the keywords. Use &#10; to insert a new line.-->
   <property name="Text" value=""/>
-  <!--The cards bonus points-->
   <property name="BonusPoints" value=""/>
-  <!--Comma separated confront requirements for the player, in the form of "X Color" or "X Non-Color"-->
+  <!--Comma separated confront requirements for the player, in the form of any combination of "X Color", "X Non-Color" and/or "X Wild"-->
   <property name="YourRequirements" value=""/>
   <!--Comma separates confront requirements for the opponent-->
   <property name="OpponentsRequirements" value=""/>
-  <!--The cards abbreviated rarity. C=common, U=uncommon, R=rare, UR=Ultra Rare, F=fixed, P=promo-->
+  <!--The cards abbreviated rarity. C, U, R, SR, UR, <<secret rare>>, F or P-->
   <property name="Rarity" value=""/>
-<!--The following nodes all have to do with the programming of the card and are called as scripts. The scripts have access to most of the globals and two locals: a = a context sensitive dictionary that the script can use to make decisions and retVal which defaults to True and should be set to the required return value as the return statement is unavailable. Again, any of these can be left blank if not necessary.-->
-  <!--Called immediately after the card is loaded, useful for cards that say their name is something else such as Pie Sisters, Two of a Kind-->
-  <property name="OnGameLoad" value=""/>
-  <!--Called when the game needs to know if a card effect can be activated by a player and what effects it can activate. retVal should be set to False if no effect can be activated, True if there is only one effect that can be activated or a list of short descriptions of one or more effects that can be activated.-->
-  <property name="ActivatedList" value=""/>
-  <!--Called to activate the effect of the card. If there are multiple effects on the card, you can check which one was activated via a['effectNum'] starting at 0-->
-  <property name="Activated" value=""/>
-  <!--Called when the game needs to know if a card has additional play requirements, such as needing to discard cards or some such. retVal should be set to True if it can be played or False if not; in addition you should writeData the reason it can't be played to "reason"
-  NOTE: Calling this does not imply that the card will be played, as such you should not perform the actions required to play the card here, put that in PrePlayCard-->
-  <property name="CheckPlay" value=""/>
-  <!--Called when a card is about to be played, after the entersPlay preEvent is fired-->
-  <property name="PrePlayCard" value=""/>
-  <!--Called when a card enters play, either by being played or by an effect; you can check which via a['played']. Putting a card into play is a two stage process, which can be interrupted by setting a['cleanup'] to False; useful for events/resourced that need to target a card.-->
-  <property name="EntersPlay" value=""/>
-  <!--Called when a card leaves play.-->
-  <property name="LeavesPlay" value=""/>
-  <!--Called when a card is flipped during a faceoff; use this for chaos effects.-->
-  <property name="Flipped" value=""/>
-  <!--Called when a card is moved to a different zone on the table.-->
-  <property name="Moved" value=""/>
-  <!--Called when a card is uncovered, such as turning up a TM or unfrighten a friend. Problems being uncoverd should be handled in EntersPlay-->
-  <property name="Uncovered" value=""/>
-  <!--Called when a Problem is confronted.-->
-  <property name="Confront" value=""/>
-  <!--Called when a Problem is replaced, either by being solved or by effect.-->
-  <property name="Replaced" value=""/>
+  <!--The effect class is the class singleton that will control the card's behaviour.
+  it must inherit from 'Effect_Base' and, once written, be bound to the variable 'cls'-->
+  <property name="EffectClass" value=""/>
   <!--The alternate node and child nodes may be excluded if a card does not have a flip side; currently only Mane Characters need to include this.-->
   <!--The type must be (for now) "Mane Character Boosted"-->
   <alternate name="" type="Mane Character Boosted">
+    <property name="Title" value=""/>
     <property name="Subtitle" value=""/>
     <!--Should be the same number-->
     <property name="Number" value=""/>
@@ -77,16 +53,7 @@ Flavour text is omitted as it has no effect on gameplay and will only clutter up
     <property name="OpponentsRequirements" value=""/>
     <!--Should be the same rarity-->
     <property name="Rarity" value=""/>
-    <property name="OnGameLoad" value=""/>
-    <property name="ActivatedList" value=""/>
-    <property name="CheckPlay" value=""/>
-    <property name="Activated" value=""/>
-    <property name="EntersPlay" value=""/>
-    <property name="LeavesPlay" value=""/>
-    <property name="Flipped" value=""/>
-    <property name="Moved" value=""/>
-    <property name="Uncovered" value=""/>
-    <property name="Confront" value=""/>
-    <property name="Replaced" value=""/>
+    <!--This is never loaded; do everything you need to in the class above-->
+    <property name="EffectClass" value=""/>
   </alternate>
 </card>
