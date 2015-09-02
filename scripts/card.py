@@ -19,7 +19,7 @@ class _Card(object):
         self._side_[0]['_subtitle_'] = [c.Subtitle]
         self._side_[0]['_traits_'] = parseTraits(c.Traits)
         self._side_[0]['_colors_'] = parseColors(c.Colors)
-        self._side_[0]['_power_'] = intOrNone(c.Power)
+        self._side_[0]['_power_'] = intOrZero(c.Power)
         self._side_[0]['_keywords_'] = parseKeywords(c, c.Keywords)
         self._side_[0]['_text_'] = c.Text
         # Back Side
@@ -31,7 +31,7 @@ class _Card(object):
             self._side_[1]['_subtitle_'] = [altf(alt,'Subtitle')]
             self._side_[1]['_traits_'] = parseTraits(altf(alt,'Traits'))
             self._side_[1]['_colors_'] = parseColors(altf(alt,'Colors'))
-            self._side_[1]['_power_'] = intOrNone(altf(alt,'Power'))
+            self._side_[1]['_power_'] = intOrZero(altf(alt,'Power'))
             self._side_[1]['_keywords_'] = parseKeywords(c, altf(alt,'Keywords'))
             self._side_[1]['_text_'] = altf(alt,'Text')
         # Common info
@@ -45,11 +45,13 @@ class _Card(object):
         self._rarity_ = rarity[c.Rarity.replace(' ','')]
         
         self._effect_ = load_effect_class(c.EffectClass)
+        for effect in self._effect_: effect.printed = True
         
         # Setup a few other things
         # self._applied_modifiers_ = []
         self._modifiers_ = []
         self._location_ = location.deck
+        self._turn_entered_area_ = gs.turn_count_
         
         # Load the instance into the gamestate manager
         gs.new_card(self)
@@ -81,6 +83,8 @@ class _Card(object):
                 # raise StaticAttributeError("Can not change static attribute: {}".format(a))
         # else:
             # super(_Card, self).__setattr__(a, v)
+            
+    turn_entered_area = property(lambda self: self._turn_entered_zone_)
 
     def get_location(self):
         return self._location_
@@ -88,12 +92,9 @@ class _Card(object):
         mute()
         oldLoc = self.location
         card = Card_Base(self._id)
-        if type(loc) == int:
-            index = loc
-            loc = oldLoc
         if oldLoc == loc:
             if index:
-                if self.inPlay: card.setIndex(index)
+                if self.in_play(): card.setIndex(index)
                 else: card.moveTo(card.group, index)
             return
         g = getGroupFromLocation(loc)
@@ -104,7 +105,6 @@ class _Card(object):
             if index: card.moveTo(g, index)
             else: card.moveTo(g)
         self._location_ = loc
-        gs.changeLoaction(self, loc)
     location = property(get_location, set_location)
         
     def get_boosted(self):
@@ -122,7 +122,8 @@ class _Card(object):
         return Card_Base(self._id).isFaceUp
     def set_faceup(self, val, force=False, trigger=True):
         if cardType.maneCharacter in self.type:
-            self.set_boosted(set, force, trigger)
+            self.set_boosted(val, force, trigger)
+        # TODO: move face up/face down code here
         elif val == True:
             self.flipFaceup(force, trigger)
         elif val == False:
@@ -135,7 +136,7 @@ class _Card(object):
             if self.is_in_play():
                 return card.orientation & Rot90 == Rot90
         return False
-    def set_exhausted(self, val, force=False, trigger=True):
+    def exhaust(self, val, force=False, trigger=True):
         mute()
         if val == True:
             if (force and self.ready) or self.can_exhaust():
@@ -151,14 +152,9 @@ class _Card(object):
                 if force or not canceled:
                     Card_Base(self._id).orientation = Rot0
                     if trigger: fireEvent(event.ready)
-    exhausted = property(get_exhausted, set_exhausted)
-    exhaust = exhausted
-    
-    def get_ready(self):
-        return not self.exhausted
-    def set_ready(self, val, force=False, trigger=True):
-        self.set_exhausted(not val, force, trigger)
-    ready = property(get_ready, set_ready)
+    def ready(self, val, force=False, trigger=True):
+        self.exhaust(not val, force, trigger)
+    exhausted = property(get_exhausted, exhaust)
             
     def can_exhaust(self):
         return self._apply_modifiers(modifier.exhaust, self.ready)
@@ -287,8 +283,8 @@ class _Card(object):
             obj.replaced(self)
             
     # Modifiers
-    def new_modifier(self, modifier_type):
-        mod = Modifier(self, modifier_type)
+    def new_modifier(self, modifier_type, effect = None):
+        mod = Modifier(self, modifier_type, effect)
         self._modifiers_.append(mod)
         # self._applied_modifiers_.append(mod)
         return mod
@@ -301,6 +297,12 @@ class _Card(object):
         
     def _apply_modifiers(self, modifier_type, arg):
         return apply_modifiers(self, modifier_type, arg)
+        
+    # Events
+    def new_event(self, event_type, effect = None):
+        evt = new_event(event_type, effect)
+        evt.bind_to_card(self)
+        return evt
     
     # Directly accessible methods
     def is_character(self):
@@ -310,6 +312,10 @@ class _Card(object):
     def is_in_play(self):
         loc = self.location
         return loc == location.home or loc == location.myProblem or loc == location.oppProblem
+    in_play = property(is_in_play)
+        
+    def entered_play_this_turn(self):
+        return self.in_play and gs.turn_count == self.turn_entered_area
     
     # def ready(self, force=False, trigger=True):
         # mute()
@@ -333,6 +339,9 @@ class Effect_Base(object):
     def __init__(self, card):
         self._id = uuid4()
         self.printed = False
+        self.modifier = set()
+        self._is_keyword = False
+    is_keyword = property(lambda self: self._is_keyword)
     def gameload(self, card): pass
     def activate_list(self, card): return []
     def activate(self, card, index = 1): return ''
@@ -360,6 +369,12 @@ class Effect_Base(object):
             return not self == other
         return NotImplemented
     def __hash__(self): return hash(tuple(sorted(self.__dict__.items())))
+    
+class Keyword_Base(Effect_Base):
+    def __init__(self, card, value = None):
+        Effect_Base.__init__(self, card)
+        self.value = value
+        self._is_keyword = True
 
 def load_effect_class(class_text):
     whiteSpace = -1
@@ -390,7 +405,7 @@ def parse_string(str, ws):
             except IndexError: pass
     return "".join(l)
 
-def intOrNone(n, default=None):
+def intOrZero(n, default=0):
     try: return int(n)
     except ValueError: return default
     
@@ -420,7 +435,6 @@ def parseKeywords(card, string):
     l = re.split("(,|, )",string)
     for i in range(len(l)):
         if l[i] != r', ' and l[i] != r',': s.append(l[i])
-    class_text = None
     for v in s:
         n = ''
         while v.endswith(('0','1','2','3','4','5','6','7','8','9')):
@@ -428,24 +442,21 @@ def parseKeywords(card, string):
             v = v[:-1]
         if v.endswith((' ',)): v = v[:-1]
         obj = None
-        val = intOrNone(n)
+        val = intOrZero(n, None)
         try:
-            if val == None: exec('obj = KW_'+v.replace(' ','_')+'()')
-            else: exec('obj = KW_'+v.replace(' ','_')+'('+val+')')
+            exec('obj = KW_'+v.replace(' ','_')+'('+val+')')
         except NameError:
-            if class_text == None:
-                class_text = card.EffectClass
-                whiteSpace = -1
-                try:
-                    while class_text[0] == ' ':
-                        whiteSpace += 1
-                        class_text = class_text[1:]
-                    class_text = parse_string(class_text, whiteSpace)
-                    exec(class_text)
-                except IndexError:
-                    raise NoEffectDeffined('Unable to load custom keyword effect: '+v)
-            if val == None: exec('obj = KW_'+v.replace(' ','_')+'()')
-            else: exec('obj = KW_'+v.replace(' ','_')+'('+val+')')
+            class_text = card.EffectClass
+            whiteSpace = -1
+            try:
+                while class_text[0] == ' ':
+                    whiteSpace += 1
+                    class_text = class_text[1:]
+                class_text = parse_string(class_text, whiteSpace)
+                exec(class_text)
+                exec('obj = KW_'+v.replace(' ','_')+'('+val+')')
+            except (IndexError, NameError):
+                raise NoEffectDeffined('Unable to load custom keyword effect: '+v)
         kw[keyword[v.replace(' ','')]] = obj
     return kw
             

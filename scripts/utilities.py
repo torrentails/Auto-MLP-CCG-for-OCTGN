@@ -1,3 +1,5 @@
+
+
 import time
 import re
 import math
@@ -497,3 +499,4 @@ def confront(card):
 def replaceProblem(card, solved=True):
     #TODO: Write replacement code
     pass
+

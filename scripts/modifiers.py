@@ -1,4 +1,5 @@
 import copy
+import types
 
 modifier_list = []
 modifiers_to_remove = set()
@@ -9,15 +10,12 @@ def apply_modifiers(obj, modifier_type, arg, applied_modifiers=set()):
     iterating_modifiers += 1
     arg = copy.deepcopy(arg)
     changed = False
-    for mod in modifier_list:
-        if mod not in applied_modifiers:
-            if mod.enabled and mod.type == modifier_type:
-                if self in mod.apply_list:
-                    if mod.condition(obj):
-                        applied_modifiers.add(mod)
-                        old_arg = copy.deepcopy(arg)
-                        arg = mod.action(obj, arg)
-                        if not changed and arg != old_arg: changed = True
+    for mod in [mod for mod in modifier_list if mod.enabled and mod not in applied_modifiers and mod.type == modifier_type and obj in mod.apply_list]:
+        if mod.condition(obj):
+            applied_modifiers.add(mod)
+            old_arg = copy.deepcopy(arg)
+            arg = mod.action(obj, arg)
+            changed = changed or arg != old_arg
     if changed:
         arg = apply_modifiers(obj, modifier_type, arg, applied_modifiers)
     iterating_modifiers -= 1
@@ -30,12 +28,14 @@ def remove_pending_modifiers():
         mod.remove()
         
 class Modifier():
-    def __init__(self, card, modifier_type):
-        def foo(*args): pass
-        self._owner_ = card
+    def __init__(self, card, modifier_type, effect=None):
+        def foo(*args, **kwargs): pass
+        self._card_owner_ = card
+        self._owner_ = effect
         self._modifier_type_ = modifier_type
         self._condition_ = foo
         self._action_ = foo
+        self._cleanup_ = foo
         self._remove_on_new_instance_ = True
         self._applies_to_ = [card]
         self._enabled_ = True
@@ -43,13 +43,14 @@ class Modifier():
         return(self)
     
     # Read only properties
+    card_owner = property(lambda self: self._card_owner_)
     owner = property(lambda self: self._owner_)
     type = property(lambda self: self._modifier_type_)
     def get_apply_list(self):
         lst = []
         def fetch_val(val, is_recursing = False):
             if val in location:
-                return [c for c in get_cards_at_location(val) if c != self.owner]
+                return [c for c in get_cards_at_location(val) if c != self.card_owner]
             elif type(val) == Card or type(val) == Player:
                 return [val]
             elif type(val) == list and:
@@ -75,14 +76,20 @@ class Modifier():
     def get_condition(self): return self._condition_
     def set_condition(self, func):
         assert type(func) == type(self.apply), "{} must be a function".format(str(func))
-        self._condition_ = func
+        self._condition_ = types.MethodType(func, self)
     condition = parameter(get_condition, set_condition)
     
     def get_action(self): return self._action_
     def set_action(self, func):
         assert type(func) == type(self.apply), "{} must be a function".format(str(func))
-        self._action_ = func
+        self._action_ = types.MethodType(func, self)
     action = parameter(get_action, set_action)
+    
+    def get_cleanup(self): return self._cleanup_
+    def set_cleanup(self, func):
+        assert type(func) == type(self.apply), "{} must be a function".format(str(func))
+        self._action_ = types.MethodType(func, self)
+    cleanup = parameter(get_action, set_action)
     
     def get_remove_on_new_instance(self): return self._remove_on_new_instance_
     def set_remove_on_new_instance(self, bool): self._remove_on_new_instance_ = bool
@@ -99,6 +106,17 @@ class Modifier():
     def set_enabled(self, bool): self._enabled_ = bool
     enabled = property(get_enabled, set_enabled)
     
+    def get_value(self):
+        try: return self._value_
+        except AttributeError:
+            try:
+                return self.owner.value
+            except AttributeError:
+                raise AttributeError("No value or owner has been assigned to this modifier.")
+    def set_value(self, val):
+        self._value_ = val
+    value = (get_value, set_value)
+    
     # Methods
     def remove(self):
         self.enabled = False
@@ -107,4 +125,4 @@ class Modifier():
             modifiers_to_remove.add(self)
         else:
             modifier_list.remove(self)
-            self.owner.remove_modifier(self, True)
+            self.card_owner.remove_modifier(self, True)
