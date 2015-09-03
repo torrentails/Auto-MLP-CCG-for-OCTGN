@@ -85,6 +85,3 @@ docs/_build/
 
 # PyBuilder
 target/
-
-# Prevent git from complaining about sub gits
-.git/
