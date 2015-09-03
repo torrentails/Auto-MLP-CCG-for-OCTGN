@@ -375,7 +375,24 @@ class Keyword_Base(Effect_Base):
         Effect_Base.__init__(self, card)
         self.value = value
         self._is_keyword = True
-
+        
+def fetch_keyword_object(kw, id, val=None):
+    Card = Card_Base
+    card = table.create(id, 0, 0)
+    class_text = card.EffectClass
+    card.delete()
+    whiteSpace = -1
+    try:
+        while class_text[0] == ' ':
+            whiteSpace += 1
+            class_text = class_text[1:]
+        class_text = parse_string(class_text, whiteSpace)
+        exec(class_text)
+        exec('obj = KW_'+kw.replace(' ','_')+'('+val+')')
+        return obj
+    except (IndexError, NameError):
+        raise NoEffectDeffined('Unable to load custom keyword effect: '+kw)
+        
 def load_effect_class(class_text):
     whiteSpace = -1
     try:
@@ -427,7 +444,7 @@ def parseRequirements(string):
     for i in l:
         d[color[i[0]]] = int(i[1])
     return d
-        
+
 def parseKeywords(card, string):
     kw = {}
     if string == '': return kw
@@ -467,7 +484,7 @@ def parseList(string):
     for i in range(len(l)):
         if l[i] != r', ' and l[i] != r',': lst.append(l[i].replace(' ',''))
     return lst
-    
+
 def parseDict(string):
     lst = []
     if string == '': return lst

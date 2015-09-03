@@ -1,5 +1,3 @@
-
-
 import time
 import re
 import math
@@ -104,87 +102,87 @@ class Enum(object):
 # Script loading and dispatcher functions
 #-----------------------------------------------------------------------
     
-def excecute(card, effectType, a={}, retVal=True):
-    if   effectType == dispatch.onGameLoad:    e,p = OnGameLoad(card),True
-    elif effectType == dispatch.activatedList: e,p = ActivatedList(card),True
-    elif effectType == dispatch.activated:     e,p = Activated(card),False
-    elif effectType == dispatch.checkPlay:     e,p = CheckPlay(card),True
-    #TODO: PrePlayCard may be unnecessary; re-examine this when the core is more fleshed out.
-    elif effectType == dispatch.prePlayCard:   e,p = PrePlayCard(card),True
-    elif effectType == dispatch.entersPlay:    e,p = EntersPlay(card),False
-    #TODO: Should we remove LeavesPlay as it can be set via events through EntersPlay?
-    elif effectType == dispatch.leavesPlay:    e,p = LeavesPlay(card),False
-    elif effectType == dispatch.flipped:       e,p = Flipped(card),False
-    #TODO: Should we remove Moved as it can be set via events through EntersPlay?
-    elif effectType == dispatch.moved:         e,p = Moved(card),False
-    elif effectType == dispatch.uncovered:     e,p = Uncovered(card),False
-    elif effectType == dispatch.confronted:    e,p = Confronted(card),False
-    elif effectType == dispatch.replaced:      e,p = Replaced(card),False
+# def excecute(card, effectType, a={}, retVal=True):
+    # if   effectType == dispatch.onGameLoad:    e,p = OnGameLoad(card),True
+    # elif effectType == dispatch.activatedList: e,p = ActivatedList(card),True
+    # elif effectType == dispatch.activated:     e,p = Activated(card),False
+    # elif effectType == dispatch.checkPlay:     e,p = CheckPlay(card),True
+    # #TODO: PrePlayCard may be unnecessary; re-examine this when the core is more fleshed out.
+    # elif effectType == dispatch.prePlayCard:   e,p = PrePlayCard(card),True
+    # elif effectType == dispatch.entersPlay:    e,p = EntersPlay(card),False
+    # #TODO: Should we remove LeavesPlay as it can be set via events through EntersPlay?
+    # elif effectType == dispatch.leavesPlay:    e,p = LeavesPlay(card),False
+    # elif effectType == dispatch.flipped:       e,p = Flipped(card),False
+    # #TODO: Should we remove Moved as it can be set via events through EntersPlay?
+    # elif effectType == dispatch.moved:         e,p = Moved(card),False
+    # elif effectType == dispatch.uncovered:     e,p = Uncovered(card),False
+    # elif effectType == dispatch.confronted:    e,p = Confronted(card),False
+    # elif effectType == dispatch.replaced:      e,p = Replaced(card),False
     
-    if e == "": return retVal
-    if p or isPPPEnabled():
-        whiteSpace = -1
-        while e[0] == ' ':
-            whiteSpace += 1
-            e = e[1:]
-        e = parseString(e, whiteSpace)
-        a['card'] = card
-        exec(e)
-    else: addPPP(excecute, card, effectType, a, retVal)
-    return retVal
+    # if e == "": return retVal
+    # if p or isPPPEnabled():
+        # whiteSpace = -1
+        # while e[0] == ' ':
+            # whiteSpace += 1
+            # e = e[1:]
+        # e = parseString(e, whiteSpace)
+        # a['card'] = card
+        # exec(e)
+    # else: addPPP(excecute, card, effectType, a, retVal)
+    # return retVal
     
-def parseString(str, ws):
-    if ws == -1: ws = 0
-    l = re.split("(/;|/`|;;|`|;,|;\.|; )",str)
-    for i in range(len(l)):
-        if l[i] == r'/;':    l[i] = ';'
-        elif l[i] == r'/`':  l[i] = '`'
-        elif l[i] == r';;':  l[i] = '"'
-        elif l[i] == r'`':   l[i] = "'"
-        elif l[i] == r';,':  l[i] = '<'
-        elif l[i] == r';.':  l[i] = '>'
-        elif l[i] == r'; ':
-            l[i] = "\n"
-            try:
-                l[i+1] = l[i+1][ws:]
-            except: pass
-    return "".join(l)
+# def parseString(str, ws):
+    # if ws == -1: ws = 0
+    # l = re.split("(/;|/`|;;|`|;,|;\.|; )",str)
+    # for i in range(len(l)):
+        # if l[i] == r'/;':    l[i] = ';'
+        # elif l[i] == r'/`':  l[i] = '`'
+        # elif l[i] == r';;':  l[i] = '"'
+        # elif l[i] == r'`':   l[i] = "'"
+        # elif l[i] == r';,':  l[i] = '<'
+        # elif l[i] == r';.':  l[i] = '>'
+        # elif l[i] == r'; ':
+            # l[i] = "\n"
+            # try:
+                # l[i+1] = l[i+1][ws:]
+            # except: pass
+    # return "".join(l)
 
 #-----------------------------------------------------------------------
 # Arbitrary data system
 #-----------------------------------------------------------------------
 
-dataDict = {}
+# dataDict = {}
 
-def readData(name, default=None):
-    if name not in dataDict: return default
-    return dataDict[name]
+# def readData(name, default=None):
+    # if name not in dataDict: return default
+    # return dataDict[name]
 
-def popData(name, default=None):
-    if name not in dataDict: return default
-    return dataDict.pop(name)
+# def popData(name, default=None):
+    # if name not in dataDict: return default
+    # return dataDict.pop(name)
     
-def writeData(name, data):
-    dataDict[name] = data
+# def writeData(name, data):
+    # dataDict[name] = data
     
-def reason(msg):
-    writeData('reason', msg)
+# def reason(msg):
+    # writeData('reason', msg)
 
 #-----------------------------------------------------------------------
 # Context manager
 #-----------------------------------------------------------------------
 
-context = {}
+# context = {}
 
-def setContext(**kargs):
-    global context
-    context = kargs
-    # remoteCall(players[1], setContext, [**kargs])
+# def setContext(**kargs):
+    # global context
+    # context = kargs
+    # # remoteCall(players[1], setContext, [**kargs])
     
-def clearContext():
-    global context
-    context = {}
-    remoteCall(players[1], flushContext, [])
+# def clearContext():
+    # global context
+    # context = {}
+    # remoteCall(players[1], flushContext, [])
 
 #-----------------------------------------------------------------------
 # Internal helper functions

@@ -29,7 +29,7 @@ def remove_pending_modifiers():
         
 class Modifier():
     def __init__(self, card, modifier_type, effect=None):
-        def foo(*args, **kwargs): pass
+        def foo(*args, **kwargs): return True
         self._card_owner_ = card
         self._owner_ = effect
         self._modifier_type_ = modifier_type

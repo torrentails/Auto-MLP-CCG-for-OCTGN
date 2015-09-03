@@ -27,10 +27,11 @@ All fields, with the exception must not have any trailing period.-->
   <property name="YourRequirements" value=""/>
   <!--Comma separates confront requirements for the opponent-->
   <property name="OpponentsRequirements" value=""/>
-  <!--The cards abbreviated rarity. C, U, R, SR, UR, <<secret rare>>, F or P-->
+  <!--The cards abbreviated rarity. C, U, R, SR, UR, RR, F or P-->
   <property name="Rarity" value=""/>
   <!--The effect class is the class singleton that will control the card's behaviour.
-  it must inherit from 'Effect_Base' and, once written, be bound to the variable 'cls'-->
+  it must inherit from 'Effect_Base' and be named 'effect'-->
+  <!--If you create a custom keyword, you must also load it here, either as a Class that inherits from 'Keyword_base' or a function that returns the result of fetch_keyword_object(kw_name, UUID, value) where kw_name is the name of the keyword, UUID is the UUID of the card that actually has the code for the keyword and value is the value passed into the execution environment. In each case, the class or function must have the same name as the keyword with 'KW_' prepended.-->
   <property name="EffectClass" value=""/>
   <!--The alternate node and child nodes may be excluded if a card does not have a flip side; currently only Mane Characters need to include this.-->
   <!--The type must be (for now) "Mane Character Boosted"-->

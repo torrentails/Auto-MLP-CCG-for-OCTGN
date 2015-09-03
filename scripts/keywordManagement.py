@@ -22,72 +22,86 @@ class KW_Caretaker(Keyword_Base):
 
 class KW_Inspired(Keyword_Base):
     def new_instance(self, card):
-        # Increment inspired effects value
-        gs.write('inspired_effects', gs.read('inspired_effects', 0, me)+1, me)
-        # If the only inspired effect, create a new start of phase event
-        if gs.read('inspired_effects', 0, me) == 1:
-            evt = new_event(event.startOfPhase)
-            # set up the conditions
-            def condition(self): return gs.is_phase(phase.main, me)
-            evt.condition = condition
-            # set up the actions
-            def action(self):
-                mute()
-                deck = players[1].Deck
-                inspired_num = gs.read('inspired_effects', 0, me)
-                card_list = deck.top(inspired_num)
-                if card_list == None: return
-                elif inspired_num == 1:
-                    if confirm("Do you want to put {} back on top of {}'s deck?".format(card_list, players[1])):
-                        notifyAll("{} used Inspired to put one card on the top of {}'s deck.".format(me, players[1]))
+        gs.write('inspired_value', gs.read('inspired_value', 0, me)+1, me)
+        evt = card.new_event(event.startOfPhase)
+        def condition(self):
+            if gs.turn_player = me and not gs.read('inspired_used', False, me):
+                val = gs.read('inspired_value', 0, me)
+                use_inspired = False
+                if val == 1:
+                    use_inspired = confirm("Would you like to activate Inspired to look at the top card of {}'s deck?".format(players[1]))
+                elif val > 1:
+                    use_inspired = confirm("Would you like to activate Inspired to look at the top {} cards of {}'s deck?".format(val, players[1]))
+                if not use_inspired:
+                    if val == 1:
+                        notifyAll("{} used Inspired to put a card on the top of {}'s deck.".format(me, players[1]))
                     else:
-                        card_list.moveToBottom(deck)
-                        notifyAll("{} used Inspired to put one card on the bottom of {}'s deck.".format(me, players[1]))
-                    update()
-                else:
-                    cards_top = selectCard(card_list, min = 0, max = inspired_num, title = "Choose cards to put on top", question = "Select, in any order, the cards to put on the top of {}'s deck.".format(players[1]))
-                    for c in cards_top:
-                        card_list.remove(c)
-                    if len(card_list) <= 1:
-                        cards_bottom = card_list
-                    else:
-                        cards_bottom = selectCard(card_list, min = 0, max = len(card_list), title = "Choose cards to put on bottom", question = "Select, in any order, the cards to put on the bottom of {}'s deck.".format(players[1]))
-                    
-                    # TODO: Might need to take control of cards to move them.
-                    cards_top.reverse()
-                    for c in cards_top:
-                        c.moveTo(deck,0)
-                    for c in cards_bottom:
-                        c.moveToBottom(deck)
-                    update()
-                        
-                    if len(cards_top) > 0 and len(cards_bottom) == 0:
                         notifyAll("{} used Inspired to put {} cards on the top of {}'s deck.".format(me, len(cards_top), players[1]))
-                    elif len(cards_top) == 0 and len(cards_bottom) > 0:
-                        notifyAll("{} used Inspired to put {} cards on the bottom of {}'s deck.".format(me, len(cards_bottom), players[1]))
-                    elif len(cards_top) == 1 and len(cards_bottom) == 1:
-                        notifyAll("{} used Inspired to put a card on the top and a card on the bottom of {}'s deck.".format(me, players[1]))
-                    elif len(cards_top) > 1 and len(cards_bottom) == 1:
-                        notifyAll("{} used Inspired to put {} cards on the top and a card on the bottom of {}'s deck.".format(me, len(cards_top), players[1]))
-                    elif len(cards_top) == 1 and len(cards_bottom) > 1:
-                        notifyAll("{} used Inspired to put a card on the top and {} cards on the bottom of {}'s deck.".format(me, len(cards_bottom), players[1]))
-                    else:
-                        notifyAll("{} used Inspired to put {} cards on the top and {} cards on the bottom of {}'s deck.".format(me, len(card_top), len(cards_bottom), players[1]))
-            evt.action = action
-            # store the event for later use
-            gs.write('inspired_event', evt, me)
-    def leaves_play(self, card):
-        # Read the amount of inspired effects minus 1
-        inspired_num = gs.read('inspired_effects', 0, me)-1
-        # Write that number back into inspired effects
-        gs.write('inspired_effects', max(inspired_num, 0), me)
-        # If there are no inspired effects left, remove the inspired event
-        if inspired_num <= 0:
-            evt = gs.read('inspired_event', None, me)
-            try: evt.remove()
-            except AttributeError: return
-            else: gs.clearData('inspired_event', me)
-    def face_down(self, card): self.leaves_play(card)
+                gs.write('inspired_used', True, me)
+                return use_inspired
+            return False
+        evt.condition = condition
+        def action(self):
+            val = gs.read('inspired_value', 0, me)
+            if val == 0: return
+            elif val == 1:
+                card = me.Deck.top()
+                if confirm("Would you like to put {} on the top of {}'s deck?".format(card, players[1])):
+                    notifyAll("{} used Inspired to put a card on the top of {}'s deck.".format(me, players[1]))
+                else:
+                    card.moveToBottom(me.Deck)
+                    notifyAll("{} used Inspired to put a card on the bottom of {}'s deck.".format(me, players[1]))
+            else:
+                card_list = me.Deck.top(val)
+                dlg = askDlg(card_list)
+                dlg.title = "Choose cards to put on top."
+                dlg.text = "Choose, in order, the cards you want to put on top of {}'s deck.".format(players[1])
+                dlg.min = 0
+                dlg.max = val
+                cards_top = dlg.show()
+                
+                for c in cards_top:
+                    card_list.remove(c)
+                if len(card_list) <= 1:
+                    cards_bottom = card_list
+                else:
+                    dlg = askDlg(card_list)
+                    dlg.title = "Choose cards to put on bottom."
+                    dlg.text = "Choose, in order, the cards to put on the bottom of {}'s deck.".format(players[1])
+                    dlg.min = len(card_list)
+                    dlg.max = len(card_list)
+                    cards_bottom = dlg.show()
+                
+                cards_top.reverse()
+                for c in cards_top:
+                    c.moveTo(deck,0)
+                for c in cards_bottom:
+                    c.moveToBottom(deck)
+                update()
+                    
+                if len(cards_top) > 1 and len(cards_bottom) == 0:
+                    notifyAll("{} used Inspired to put {} cards on the top of {}'s deck.".format(me, len(cards_top), players[1]))
+                elif len(cards_top) == 0 and len(cards_bottom) > 1:
+                    notifyAll("{} used Inspired to put {} cards on the bottom of {}'s deck.".format(me, len(cards_bottom), players[1]))
+                elif len(cards_top) == 1 and len(cards_bottom) == 1:
+                    notifyAll("{} used Inspired to put a card on the top and a card on the bottom of {}'s deck.".format(me, players[1]))
+                elif len(cards_top) > 1 and len(cards_bottom) == 1:
+                    notifyAll("{} used Inspired to put {} cards on the top and a card on the bottom of {}'s deck.".format(me, len(cards_top), players[1]))
+                elif len(cards_top) == 1 and len(cards_bottom) > 1:
+                    notifyAll("{} used Inspired to put a card on the top and {} cards on the bottom of {}'s deck.".format(me, len(cards_bottom), players[1]))
+                else:
+                    notifyAll("{} used Inspired to put {} cards on the top and {} cards on the bottom of {}'s deck.".format(me, len(card_top), len(cards_bottom), players[1]))
+        evt.action = action
+        def cleanup(self):
+            gs.write('inspired_value', max(gs.read('inspired_value', 0, me)-1, 0), me)
+        evt.cleanup = cleanup
+        preevt = new_event(event.startOfTurn)
+        preevt.condition = lambda self: gs.turn_player == me
+        def pre_action(self):
+            gs.write('inspired_used', False, me)
+            if gs.read('inspired_value', 0, me) == 0:
+                self.remove()
+        preevt.action = pre_action
 
 class KW_Random(Keyword_Base):
     def faceoff(self, card):
@@ -378,74 +392,6 @@ class KW_Meticulous(Keyword_Base):
                 else:
                     notifyAll("{} used Meticulous to put {} cards on the top and {} cards on the bottom of their deck.".format(me, len(card_top), len(cards_bottom)))
         evt.action = action
-    
-        ## TODO: Can use this code for a better Inspired but too lazy to move it right now.
-        # gs.write('meticulous_value', gs.read('meticulous_value', 0, me)+self.value, me)
-        # evt = card.new_event(event.startOfTurn)
-        # evt.value = self.value
-        # def condition(self):
-            # if gs.turn_player = me and not gs.read('meticulous_used', False, me):
-                # val = gs.read('meticulous_value', 0, me)
-                # if val == 1:
-                    # return confirm("Would you like to activate Meticulous to look at the top card of your deck?")
-                # elif val > 1:
-                    # return confirm("Would you like to activate Meticulous to look at the top {} cards of your deck?".format(val))
-            # return False
-        # evt.condition = condition
-        # def action(self):
-            # val = gs.read('meticulous_value', 0, me)
-            # if val == 0: return
-            # elif val == 1:
-                # card = me.Deck.top()
-                # if confirm("Would you like to put {} on the top of your deck?".format(card)):
-                    # notifyAll("{} used Meticulous to put a card on the top of their deck.".format(me))
-                # else:
-                    # card.moveToBottom(me.Deck)
-                    # notifyAll("{} used Meticulous to put a card on the bottom of their deck.".format(me))
-            # else:
-                # card_list = me.Deck.top(val)
-                # dlg = askDlg(card_list)
-                # dlg.title = "Choose cards to put on top."
-                # dlg.text = "Choose, in order, the cards you want to put on top of your deck."
-                # dlg.min = 0
-                # dlg.max = val
-                # cards_top = dlg.show()
-                
-                # for c in cards_top:
-                    # card_list.remove(c)
-                # if len(card_list) <= 1:
-                    # cards_bottom = card_list
-                # else:
-                    # dlg = askDlg(card_list)
-                    # dlg.title = "Choose cards to put on bottom."
-                    # dlg.text = "Choose, in order, the cards to put on the bottom of your deck."
-                    # dlg.min = len(card_list)
-                    # dlg.max = len(card_list)
-                    # cards_bottom = dlg.show()
-                
-                # cards_top.reverse()
-                # for c in cards_top:
-                    # c.moveTo(deck,0)
-                # for c in cards_bottom:
-                    # c.moveToBottom(deck)
-                # update()
-                    
-                # if len(cards_top) > 0 and len(cards_bottom) == 0:
-                    # notifyAll("{} used Meticulous to put {} cards on the top of their deck.".format(me, len(cards_top)))
-                # elif len(cards_top) == 0 and len(cards_bottom) > 0:
-                    # notifyAll("{} used Meticulous to put {} cards on the bottom of their deck.".format(me, len(cards_bottom)))
-                # elif len(cards_top) == 1 and len(cards_bottom) == 1:
-                    # notifyAll("{} used Meticulous to put a card on the top and a card on the bottom of their deck.".format(me))
-                # elif len(cards_top) > 1 and len(cards_bottom) == 1:
-                    # notifyAll("{} used Meticulous to put {} cards on the top and a card on the bottom of their deck.".format(me, len(cards_top)))
-                # elif len(cards_top) == 1 and len(cards_bottom) > 1:
-                    # notifyAll("{} used Meticulous to put a card on the top and {} cards on the bottom of their deck.".format(me, len(cards_bottom)))
-                # else:
-                    # notifyAll("{} used Meticulous to put {} cards on the top and {} cards on the bottom of their deck.".format(me, len(card_top), len(cards_bottom)))
-        # evt.action = action
-        # def cleanup(self):
-            # gs.write('meticulous_value', max(gs.read('meticulous_value', 0, me)-self.value, 0), me)
-        # evt.cleanup = cleanup
 
 class KW_Showy(Keyword_Base):
     def new_instance(self, card):

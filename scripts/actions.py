@@ -41,7 +41,7 @@ def activate(card, x = 0, y = 0):
             if choice == -1: return
             msg = excecute(card, dispatch.activated, {'effect':choice}, retVal='')
             notifyAll("{} activates the {} effect of {}".format(me, lst[choice], card)+msg)
-    
+
 def onClickCard(card, x = 0, y = 0):
     """Called when a card is clicked once. It will check if an action or a card being played is awaiting selection and, if so, will select the card/play the card being played to the clicked card's location. If not, then event.preClickCard and event.clickCard are fired. Finally, if it is not cancelled by event.preClickCard, the function will make a call to activate."""
     if eval(getGlobalVariable('playingCard_player')) == me._id:
