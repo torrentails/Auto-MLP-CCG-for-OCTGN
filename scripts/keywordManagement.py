@@ -166,7 +166,7 @@ class KW_Swift(Keyword_Base):
         mod = card.new_modifier(self, modifier.movement)
         self.modifier.add(mod)
         # Check that it was a standard, main phase move
-        def condition(self, card): return cm.is_main_pahse_move
+        def condition(self, card): return gs.is_main_pahse_move
         mod.condition = condition
         # Reduce its main phase movement by one
         def action(self, card, cost): return max(cost-1, 0)
@@ -188,13 +188,13 @@ class KW_Pumped(Keyword_Base):
         evt = card.new_event(event.endFaceoff)
         def condition(self):
             # Get a list of flipped cards we control
-            lst = [c for c in cm.flippedCards if c.controller == me]
+            lst = [c for c in gs.flippedCards if c.controller == me]
             # Check that we did actually flip cards and that the Pumped card was actually involved in the faceoff
             return len(lst) >= 1 and self.card.involved_in_faceoff() and confirm("Would you like to banish a card beneath {} for Pumped?".format(self.card))
         evt.condition = condition
         def action(self):
             # We need to build the list again
-            lst = [c for c in cm.flippedCards if c.controller == me]
+            lst = [c for c in gs.flippedCards if c.controller == me]
             # If there was more than one card flipped during the faceoff, we need to ask which one the player wants to banish
             if len(lst) > 1:
                 dlg = askDlg(lst)
@@ -295,13 +295,13 @@ class KW_Teamwork(Keyword_Base):
 class KW_Calming(Keyword_Base):
     def new_instance(self, card):
         mod = card.new_modifier(self, modifier.power)
-        mod.condition = lambda self, card: card.entered_play_this_turn()
+        mod.condition = lambda self, card: card.entered_play_this_turn() and card.entered_play_under_control(players[1]) and cardType.friend in card.type
         mod.action = lambda self, card, power: power - self.value
         mod.applies_to = [card.get_location]
 
 class KW_Competitive(Keyword_Base):
     def new_instance(self, card):
-        mod = card.new_modifier(self, modifier.power)
+        mod = card.new_modifier(modifier.power, self)
         mod.condition = lambda self, card: card.involved_in_faceoff()
         mod.action = lambda self, card, power: power + self.value
 
@@ -334,7 +334,7 @@ class KW_Meticulous(Keyword_Base):
         evt = card.new_event(event.startOfTurn)
         evt.value = self.value
         def condition(self):
-            if gs.turn_player = me:
+            if gs.turn_player == me:
                 if self.value == 1:
                     return confirm("Would you like to use Meticulous to look at the top card of your deck?")
                 elif self.value > 1:
@@ -395,6 +395,7 @@ class KW_Meticulous(Keyword_Base):
 
 class KW_Showy(Keyword_Base):
     def new_instance(self, card):
+        #Differentiate between moving to, moving from and general movement.
         mod = card.new_modifier(modifier.movementCost, self)
         mod.condition = lambda self, card, cost: card.controller != me
         mod.action = lambda self, card, cost: cost + self.value
@@ -404,8 +405,8 @@ class KW_Vexing(Keyword_Base):
     def new_instance(self, card):
         evt = card.new_event(preEvent.confront)
         def condition(self):
-            problem = cm.problem_confonted
-            return cm.confronting_player != me and problem == self.card.at_problem() and confirm("{} is about to confront {}. Would you like to activate Vexing on {}?".format(players[1], problem, self.card))
+            problem = gs.problem_confonted
+            return gs.confronting_player != me and problem == self.card.at_problem() and confirm("{} is about to confront {}. Would you like to activate Vexing on {}?".format(players[1], problem, self.card))
         evt.condition = condition
         def action(self):
             self.card.retire()

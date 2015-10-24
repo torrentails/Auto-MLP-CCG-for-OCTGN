@@ -2,7 +2,7 @@ class Gamestate(object):
     def __init__(self):
         self._syncOn = True
         self._pending_data = []
-        self[me._id
+        self._player_data= {Player(me._id):set()}
         self.card_dict = {}
         
     def __setattr__(self, a, v):
