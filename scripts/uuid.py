@@ -43,80 +43,68 @@ class UUID(object):
         return '%s-%s-%s-%s-%s' % (
             hex[:8], hex[8:12], hex[12:16], hex[16:20], hex[20:])
 
-    def get_bytes(self):
+    @property
+    def bytes(self):
         bytes = ''
         for shift in range(0, 128, 8):
             bytes = chr((self.int >> shift) & 0xff) + bytes
         return bytes
 
-    bytes = property(get_bytes)
-
-    def get_bytes_le(self):
+    @property
+    def bytes_le(self):
         bytes = self.bytes
         return (bytes[3] + bytes[2] + bytes[1] + bytes[0] +
                 bytes[5] + bytes[4] + bytes[7] + bytes[6] + bytes[8:])
 
-    bytes_le = property(get_bytes_le)
-
-    def get_fields(self):
+    @property
+    def fields(self):
         return (self.time_low, self.time_mid, self.time_hi_version,
                 self.clock_seq_hi_variant, self.clock_seq_low, self.node)
 
-    fields = property(get_fields)
-
-    def get_time_low(self):
+    @property
+    def time_low(self):
         return self.int >> 96L
 
-    time_low = property(get_time_low)
-
-    def get_time_mid(self):
+    @property
+    def time_mid(self):
         return (self.int >> 80L) & 0xffff
 
-    time_mid = property(get_time_mid)
-
-    def get_time_hi_version(self):
+    @property
+    def time_hi_version(self):
         return (self.int >> 64L) & 0xffff
 
-    time_hi_version = property(get_time_hi_version)
-
-    def get_clock_seq_hi_variant(self):
+    @property
+    def clock_seq_hi_variant(self):
         return (self.int >> 56L) & 0xff
 
-    clock_seq_hi_variant = property(get_clock_seq_hi_variant)
-
-    def get_clock_seq_low(self):
+    @property
+    def clock_seq_low(self):
         return (self.int >> 48L) & 0xff
 
-    clock_seq_low = property(get_clock_seq_low)
-
-    def get_time(self):
+    @property
+    def time(self):
         return (((self.time_hi_version & 0x0fffL) << 48L) |
                 (self.time_mid << 32L) | self.time_low)
 
-    time = property(get_time)
-
-    def get_clock_seq(self):
+    @property
+    def clock_seq(self):
         return (((self.clock_seq_hi_variant & 0x3fL) << 8L) |
                 self.clock_seq_low)
 
-    clock_seq = property(get_clock_seq)
-
-    def get_node(self):
+    @property
+    def node(self):
         return self.int & 0xffffffffffff
 
-    node = property(get_node)
-
-    def get_hex(self):
+    @property
+    def hex(self):
         return '%032x' % self.int
 
-    hex = property(get_hex)
-
-    def get_urn(self):
+    @property
+    def urn(self):
         return 'urn:uuid:' + str(self)
 
-    urn = property(get_urn)
-
-    def get_variant(self):
+    @property
+    def variant(self):
         if not self.int & (0x8000 << 48L):
             return RESERVED_NCS
         elif not self.int & (0x4000 << 48L):
@@ -126,18 +114,15 @@ class UUID(object):
         else:
             return RESERVED_FUTURE
 
-    variant = property(get_variant)
-
-    def get_version(self):
+    @property
+    def version(self):
         # The version bits are only meaningful for RFC 4122 UUIDs.
         if self.variant == RFC_4122:
             return int((self.int >> 76L) & 0xf)
 
-    version = property(get_version)
-
 def uuid4():
     """Generate a random UUID."""
-    ##rewrite to use .NET's Random()
+    #rewrite to use .NET's Random()
     random = Random()
     bytes = [chr(random.Next(256)) for i in range(16)]
     return UUID(bytes=bytes, version=4)

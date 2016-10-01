@@ -1,16 +1,14 @@
-import time
-import re
-import math
+import time, re, math
+from functools import wraps
 
 #-----------------------------------------------------------------------
 # Globals
 #-----------------------------------------------------------------------
 
-devMode = eval(getGlobalVariable('devMode'))
+debug_mode = eval(getGlobalVariable('debug_mode'))
 
 #setup 256 white space characters for usage with notifyBar
-longSpace="                                                                "
-longSpace=longSpace+longSpace+longSpace+longSpace
+longSpace=' '*256
 
 #Setup useful colors
 highlight = {'faceoff':'#00C000', 'faceoffIgnored':'#006000', 'selection':'#C000FF'}
@@ -25,18 +23,46 @@ queryColor = '#00007F'      #Used to indicate action needs to be taken, select a
 class StaticAttributeError(TypeError):
 	def __init__(self, *args):
 		TypeError.__init__(self, *args)
-        
+
 class IncorrectCommandType(TypeError):
     def __init__(self, *args):
         TypeError.__init__(self, *args)
-        
-class ResponseTimeout(Exception):
+
+class Timeout(StandardError):
     def __init__(self, *args):
-        Exception.__init__(self, *args)
-        
+        StandardError.__init__(self, *args)
+
 class NoEffectDeffined(NotImplementedError):
     def __init__(self, *args):
         NotImplementedError.__init__(self, *args)
+
+#-----------------------------------------------------------------------
+# Networking decorators
+#-----------------------------------------------------------------------
+
+def networked(func):
+    if g.is_host():
+        return func
+    else:
+        @wraps(func)
+        def f(*args, **kwargs):
+            return wait_response(g.host, func, *args, **kwargs)
+        return f
+
+def host_func(func):
+    if g.is_host():
+        return func
+    else:
+        return None
+
+def clint_func(func):
+    # Make sure to define the host side function first
+    if g.is_host():
+        f = globals().get(func.__name__, None)
+    else:
+        def f(*args, **kwargs):
+            return wait_response(g.host, func, *args, **kwargs)
+    return f
 
 #-----------------------------------------------------------------------
 # Enumeration class
@@ -62,6 +88,8 @@ class Enum_Item(object):
         if self._initiated:
             raise TypeError("'Enum_Item' object does not support attribute assignment", name, value)
         else: super(Enum_Item, self).__setattr__(name, value)
+    def __str__(self):
+        return self.type+'.'+self.name
 
 #Define the enum class
 class Enum(object):
@@ -81,8 +109,6 @@ class Enum(object):
             return self._d[a.upper()]
         except KeyError:
             raise AttributeError("No enum value defined.", a)
-        else:
-            raise
     def __setattr__(self, a, v):
         if self._initiated:
             raise TypeError("'Enum' object does not support attribute assignment")
@@ -92,102 +118,16 @@ class Enum(object):
     def __name__(self):
         return self._name
     def __iter__(self):
-        i = 0 
+        i = 0
         l = self._d.values()
         while i < len(l):
             yield l[i]
             i+=1
 
 #-----------------------------------------------------------------------
-# Script loading and dispatcher functions
-#-----------------------------------------------------------------------
-    
-# def excecute(card, effectType, a={}, retVal=True):
-    # if   effectType == dispatch.onGameLoad:    e,p = OnGameLoad(card),True
-    # elif effectType == dispatch.activatedList: e,p = ActivatedList(card),True
-    # elif effectType == dispatch.activated:     e,p = Activated(card),False
-    # elif effectType == dispatch.checkPlay:     e,p = CheckPlay(card),True
-    # #TODO: PrePlayCard may be unnecessary; re-examine this when the core is more fleshed out.
-    # elif effectType == dispatch.prePlayCard:   e,p = PrePlayCard(card),True
-    # elif effectType == dispatch.entersPlay:    e,p = EntersPlay(card),False
-    # #TODO: Should we remove LeavesPlay as it can be set via events through EntersPlay?
-    # elif effectType == dispatch.leavesPlay:    e,p = LeavesPlay(card),False
-    # elif effectType == dispatch.flipped:       e,p = Flipped(card),False
-    # #TODO: Should we remove Moved as it can be set via events through EntersPlay?
-    # elif effectType == dispatch.moved:         e,p = Moved(card),False
-    # elif effectType == dispatch.uncovered:     e,p = Uncovered(card),False
-    # elif effectType == dispatch.confronted:    e,p = Confronted(card),False
-    # elif effectType == dispatch.replaced:      e,p = Replaced(card),False
-    
-    # if e == "": return retVal
-    # if p or isPPPEnabled():
-        # whiteSpace = -1
-        # while e[0] == ' ':
-            # whiteSpace += 1
-            # e = e[1:]
-        # e = parseString(e, whiteSpace)
-        # a['card'] = card
-        # exec(e)
-    # else: addPPP(excecute, card, effectType, a, retVal)
-    # return retVal
-    
-# def parseString(str, ws):
-    # if ws == -1: ws = 0
-    # l = re.split("(/;|/`|;;|`|;,|;\.|; )",str)
-    # for i in range(len(l)):
-        # if l[i] == r'/;':    l[i] = ';'
-        # elif l[i] == r'/`':  l[i] = '`'
-        # elif l[i] == r';;':  l[i] = '"'
-        # elif l[i] == r'`':   l[i] = "'"
-        # elif l[i] == r';,':  l[i] = '<'
-        # elif l[i] == r';.':  l[i] = '>'
-        # elif l[i] == r'; ':
-            # l[i] = "\n"
-            # try:
-                # l[i+1] = l[i+1][ws:]
-            # except: pass
-    # return "".join(l)
-
-#-----------------------------------------------------------------------
-# Arbitrary data system
-#-----------------------------------------------------------------------
-
-# dataDict = {}
-
-# def readData(name, default=None):
-    # if name not in dataDict: return default
-    # return dataDict[name]
-
-# def popData(name, default=None):
-    # if name not in dataDict: return default
-    # return dataDict.pop(name)
-    
-# def writeData(name, data):
-    # dataDict[name] = data
-    
-# def reason(msg):
-    # writeData('reason', msg)
-
-#-----------------------------------------------------------------------
-# Context manager
-#-----------------------------------------------------------------------
-
-# context = {}
-
-# def setContext(**kargs):
-    # global context
-    # context = kargs
-    # # remoteCall(players[1], setContext, [**kargs])
-    
-# def clearContext():
-    # global context
-    # context = {}
-    # remoteCall(players[1], flushContext, [])
-
-#-----------------------------------------------------------------------
 # Internal helper functions
 #-----------------------------------------------------------------------
-        
+
 def countTotalPower(player, col = "all", loc = table):
     power = 0
     if cards == table: getCardsInPlay(player)
@@ -208,10 +148,10 @@ def countTotalPower(player, col = "all", loc = table):
                 elif col in colors:
                     power += max(Power(c)['power'], 0)
     return power
-    
+
 def giveControl(lst):
     lst[0].setController(lst[1])
-    
+
 def canChallenge(card, charactersInvolved=[], player=me):
     dict = {'card':card, 'player':player, 'canChallenge':False, 'charactersInvolved':charactersInvolved}
     if charactersInvolved == []:
@@ -222,7 +162,7 @@ def canChallenge(card, charactersInvolved=[], player=me):
     else: dict['canChallenge'] = True
     applyModifiers(modifier.canChallenge, dict)
     return dict['canChallenge'], dict['charactersInvolved']
-    
+
 def canConfront(card, player=me):
     loc = getLocation(card)
     if card.controller == player: colorReqs = YourRequirements(card, {'player':player})
@@ -230,7 +170,7 @@ def canConfront(card, player=me):
     for c in colorReqs.iterkeys():
         if c == color.wild: wildReq = [c, colorReqs[c]]
         elif countTotalPower(player, c, loc) < colorReqs[c]: return False
-        
+
 def canConfrontWithCards(card, cardList, player=me):
     #Setup the function locals we'll need
     cards = []
@@ -303,7 +243,7 @@ def colorMatch(colorToMatch, colorList, matchWild = False):
         if matchWild == True or (len(colorList) == 1 and color.colorless in colorList): return True
     if colorToMatch.name[:3] == 'Non': return color[colorToMatch.name[:4]] not in colorList
     return colorToMatch in colorList
-    
+
 def getHomeLimit(player=me):
     manes = [c for c in getCardsInPlay(player) if cardType.maneCharacter in TypeList(c)]
     homeLimit = 0
@@ -324,14 +264,11 @@ def notifyAll(message, col=infoColor, alsoLog=True):
     if alsoLog: notify(message)
     for p in players:
         remoteCall(p, 'notifyBar', [col,message+longSpace])
-        
+
 def whisperBar(message, col=infoColor):
     mute()
     notifyBar(col, message+longSpace)
     whisper(message)
-    
-# def isBoosted(card):
-    # return card.alternate == "Mane Character Boosted"
 
 def shuffle(group=None):
     if group: group.shuffle()
@@ -342,63 +279,10 @@ def isPhase(p):
 
 def isMyPhase(p):
     return isPhase(p) and me.isActivePlayer()
-    
-# def isExhausted(card, truefalse):
-    # typList = TypeList(card)
-    # if cardType.resource in typList or cardType.troublemaker in typList or isCharacter(card):
-        # if isInPlay(card):
-            # return card.orientation & Rot90 == Rot90
-    # if truefalse: return False
-    # return None
-    
-# def isReady(card, truefalse=False):
-    # ex = isExhausted(card, truefalse)
-    # if ex == None:
-        # if trueFalse: return False
-        # else: return ex
-    # return not ex
-    
-# def canExhaust(card):
-    # if isReady(card, True) == True:
-        # return applyModifiers(modifier.canExhaust, {'card':card, 'isReady':True})['isReady']
-    # return False
-    
-# def canReady(card):
-    # if isExhausted(card, True) == True:
-        # return applyModifiers(modifier.canReady, {'card':card, 'isExhausted':True})['isExhausted']
-    # return False
-    
-def exhaust(card):
-    mute()
-    if card.controller != me:
-        remoteCall(card.controller, 'exhaust', [card])
-        return
-    if canExhaust(card):
-        if not fireEvent(preEvent.exhaust, card=card):
-            card.orientation = Rot90
-            fireEvent(event.exhaust, card=card)
-    
-def ready(card):
-    mute()
-    if card.controller != me:
-        remoteCall(card.controller, 'ready', [card])
-        return
-    if canReady(card):
-        if not fireEvent(preEvent.ready, card=card):
-            card.orientation = Rot0
-            fireEvent(event.ready, card=card)
 
-# def dismiss(cardList):
-    # pass
-    
-# def isCharacter(card):
-    # if cardType.friend in TypeList(card) or cardType.maneCharacter in TypeList(card):
-        # return cardType.character
-    # else: return False
-    
 def getTurnPlayer():
     return Player(eval(setGlobalVariable('turnPlayer')))
-    
+
 def draw(amount=1, player=me, note=True):
     mute()
     if player != me:
@@ -424,7 +308,7 @@ def draw(amount=1, player=me, note=True):
             if note:
                 if dict['amount'] == 1: notifyAll("{} draws a card.".format(me))
                 else: notifyAll("{} draws {} cards.".format(me,dict['amount']))
-    
+
 def discard(cardList):
     if type(cardList) != list: cardList = [cardList]
     for card in cardList:
@@ -441,7 +325,7 @@ def gainAT(amount):
             if dict['amount'] == 1: notifyAll("{} gains an Actions Token.".format(me))
             else: notifyAll("{} gains {} Actions Tokens.".format(me, dict['amount']))
             fireEvent(event.gainAT, **dict)
-            
+
 def loseAT(amount, spent=False):
     dict = {'amount':amount, 'spent':spent}
     applyModifiers(modifier.loseAT, dict)
@@ -489,11 +373,11 @@ def challangeTM(card, charactersInvolved=[]):
     can, lst = canChallange(card, charactersInvolved)
     if card not in lst: lst.append(card)
     if can: beginFaceoff(faceoff.troublemaker, lst)
-    
+
 def confront(card):
     #TODO: Write confront code
     pass
-    
+
 def replaceProblem(card, solved=True):
     #TODO: Write replacement code
     pass

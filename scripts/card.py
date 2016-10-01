@@ -4,7 +4,7 @@ Card_Base = Card
 
 def Card(id):
     try:
-        return gs.card_dict[id]
+        return g.card_dict[id]
     except KeyError:
         return _Card(id)
 
@@ -51,10 +51,10 @@ class _Card(object):
         # self._applied_modifiers_ = []
         self._modifiers_ = []
         self._location_ = location.deck
-        self._turn_entered_area_ = gs.turn_count_
+        self._turn_entered_area_ = g.turn_count_
         
         # Load the instance into the gamestate manager
-        gs.new_card(self)
+        g.new_card(self)
     
     # def __getattr__(self, a):
         # # Will attempt to call the associated function then check the effect class, and finally check the base card class.
@@ -315,7 +315,7 @@ class _Card(object):
     in_play = property(is_in_play)
         
     def entered_play_this_turn(self):
-        return self.in_play and gs.turn_count == self.turn_entered_area
+        return self.in_play and g.turn_count == self.turn_entered_area
     
     # def ready(self, force=False, trigger=True):
         # mute()

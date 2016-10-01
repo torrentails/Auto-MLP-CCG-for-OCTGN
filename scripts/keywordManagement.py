@@ -22,11 +22,11 @@ class KW_Caretaker(Keyword_Base):
 
 class KW_Inspired(Keyword_Base):
     def new_instance(self, card):
-        gs.write('inspired_value', gs.read('inspired_value', 0, me)+1, me)
+        g.write('inspired_value', g.read('inspired_value', 0, me)+1, me)
         evt = card.new_event(event.startOfPhase)
         def condition(self):
-            if gs.turn_player = me and not gs.read('inspired_used', False, me):
-                val = gs.read('inspired_value', 0, me)
+            if g.turn_player = me and not g.read('inspired_used', False, me):
+                val = g.read('inspired_value', 0, me)
                 use_inspired = False
                 if val == 1:
                     use_inspired = confirm("Would you like to activate Inspired to look at the top card of {}'s deck?".format(players[1]))
@@ -37,12 +37,12 @@ class KW_Inspired(Keyword_Base):
                         notifyAll("{} used Inspired to put a card on the top of {}'s deck.".format(me, players[1]))
                     else:
                         notifyAll("{} used Inspired to put {} cards on the top of {}'s deck.".format(me, len(cards_top), players[1]))
-                gs.write('inspired_used', True, me)
+                g.write('inspired_used', True, me)
                 return use_inspired
             return False
         evt.condition = condition
         def action(self):
-            val = gs.read('inspired_value', 0, me)
+            val = g.read('inspired_value', 0, me)
             if val == 0: return
             elif val == 1:
                 card = me.Deck.top()
@@ -93,13 +93,13 @@ class KW_Inspired(Keyword_Base):
                     notifyAll("{} used Inspired to put {} cards on the top and {} cards on the bottom of {}'s deck.".format(me, len(card_top), len(cards_bottom), players[1]))
         evt.action = action
         def cleanup(self):
-            gs.write('inspired_value', max(gs.read('inspired_value', 0, me)-1, 0), me)
+            g.write('inspired_value', max(g.read('inspired_value', 0, me)-1, 0), me)
         evt.cleanup = cleanup
         preevt = new_event(event.startOfTurn)
-        preevt.condition = lambda self: gs.turn_player == me
+        preevt.condition = lambda self: g.turn_player == me
         def pre_action(self):
-            gs.write('inspired_used', False, me)
-            if gs.read('inspired_value', 0, me) == 0:
+            g.write('inspired_used', False, me)
+            if g.read('inspired_value', 0, me) == 0:
                 self.remove()
         preevt.action = pre_action
 
@@ -110,7 +110,7 @@ class KW_Random(Keyword_Base):
         # Make sure the car being flipped is ours
         preevt.condition = lambda self, card: card.controller == me
         # Reset if random has been used in a previous flip
-        def action(self, card): gs.write('random_used', False, me)
+        def action(self, card): g.write('random_used', False, me)
         preevt.action = action
         # Remove this event at the end of the faceoff
         preevt.remove_on_event = event.faceoffCleanup
@@ -118,11 +118,11 @@ class KW_Random(Keyword_Base):
         # Create another event to fire after a card is flipped
         evt = card.new_event(event.flipCard)
         # Check that the card is ours, has 1 power and that we haven't used random for this card yet
-        def condition(self, card): return card.controller == me and card.power == 1 and not gs.read('random_used', False, me) and self.card.involved_in_faceoff()
+        def condition(self, card): return card.controller == me and card.power == 1 and not g.read('random_used', False, me) and self.card.involved_in_faceoff()
         evt.condition = condition
         def action(self, card):
             # let the game know that random has triggered for this card
-            gs.write('random_used', True, me)
+            g.write('random_used', True, me)
             # Ask if the player would like to re-flip
             if confirm("Would you like to activate Random to ignore the power of {} and flip a new card?".format(card)):
                 # Ignore the flipped card's power
@@ -146,18 +146,18 @@ class KW_Studious(Keyword_Base):
         evt = card.new_event(event.resolveFaceoff)
         # Check that the player is the winner of the faceoff
         def condition(self):
-            return gs.faceoff_winner == me and not gs.read('studious_used', False, me) and self.card.involved_in_faceoff()
+            return g.faceoff_winner == me and not g.read('studious_used', False, me) and self.card.involved_in_faceoff()
         evt.condition = condition
         # Give the player an action token
         def action(self):
-            gs.write('studious_used', True, me)
+            g.write('studious_used', True, me)
             gainAT(me)
         evt.action = action
         # Remove the event and reset studious at the end of the faceoff
         def cleanup_action(self):
             try: evt.remove()
             except: pass
-            gs.write('studious_used', False, me)
+            g.write('studious_used', False, me)
         new_event(event.faceoffCleanup).action = cleanup_action
 
 class KW_Swift(Keyword_Base):
@@ -166,7 +166,7 @@ class KW_Swift(Keyword_Base):
         mod = card.new_modifier(self, modifier.movement)
         self.modifier.add(mod)
         # Check that it was a standard, main phase move
-        def condition(self, card): return gs.is_main_pahse_move
+        def condition(self, card): return g.is_main_pahse_move
         mod.condition = condition
         # Reduce its main phase movement by one
         def action(self, card, cost): return max(cost-1, 0)
@@ -188,13 +188,13 @@ class KW_Pumped(Keyword_Base):
         evt = card.new_event(event.endFaceoff)
         def condition(self):
             # Get a list of flipped cards we control
-            lst = [c for c in gs.flippedCards if c.controller == me]
+            lst = [c for c in g.flippedCards if c.controller == me]
             # Check that we did actually flip cards and that the Pumped card was actually involved in the faceoff
             return len(lst) >= 1 and self.card.involved_in_faceoff() and confirm("Would you like to banish a card beneath {} for Pumped?".format(self.card))
         evt.condition = condition
         def action(self):
             # We need to build the list again
-            lst = [c for c in gs.flippedCards if c.controller == me]
+            lst = [c for c in g.flippedCards if c.controller == me]
             # If there was more than one card flipped during the faceoff, we need to ask which one the player wants to banish
             if len(lst) > 1:
                 dlg = askDlg(lst)
@@ -241,7 +241,7 @@ class KW_Prismatic(Keyword_Base):
         self.modifier.add(mod)
         def action(self, card, colorList):
             # Get a list of our cards in play that also have the crystal trait
-            lst = [c for c in gs.cards_in_play(me) if trait.crystal in c.traits]
+            lst = [c for c in g.cards_in_play(me) if trait.crystal in c.traits]
             for c in lst:
                 for col in c.colors:
                     # If the card doesn't have the color, add it to the list
@@ -310,7 +310,7 @@ class KW_Diligent(Keyword_Base):
         evt = card.new_event(event.resolveFaceoff)
         evt.value = self.value
         def condition(self):
-            return gs.faceoff_winner == me and self.card.involved_in_faceoff()
+            return g.faceoff_winner == me and self.card.involved_in_faceoff()
         evt.condition = condition
         def action(self):
             self.card.add_counter(plus_1_power, self.value)
@@ -334,7 +334,7 @@ class KW_Meticulous(Keyword_Base):
         evt = card.new_event(event.startOfTurn)
         evt.value = self.value
         def condition(self):
-            if gs.turn_player == me:
+            if g.turn_player == me:
                 if self.value == 1:
                     return confirm("Would you like to use Meticulous to look at the top card of your deck?")
                 elif self.value > 1:
@@ -405,8 +405,8 @@ class KW_Vexing(Keyword_Base):
     def new_instance(self, card):
         evt = card.new_event(preEvent.confront)
         def condition(self):
-            problem = gs.problem_confonted
-            return gs.confronting_player != me and problem == self.card.at_problem() and confirm("{} is about to confront {}. Would you like to activate Vexing on {}?".format(players[1], problem, self.card))
+            problem = g.problem_confonted
+            return g.confronting_player != me and problem == self.card.at_problem() and confirm("{} is about to confront {}. Would you like to activate Vexing on {}?".format(players[1], problem, self.card))
         evt.condition = condition
         def action(self):
             self.card.retire()

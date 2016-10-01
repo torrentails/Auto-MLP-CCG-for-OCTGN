@@ -1,6 +1,9 @@
 ##Dispatcher
 dispatch = Enum('dispatch', ['onGameLoad', 'activatedList', 'activated', 'checkPlay', 'prePlayCard', 'entersPlay', 'leavesPlay', 'flipped', 'moved', 'uncovered', 'confronted', 'replaced'])
 
+##Remote call message types
+message = Enum('message', ['INITIAL', 'RESPONSE'])
+
 ##Event types
 event = Enum('event', ['Start of Phase', 'End of Phase', 'Start Turn', 'End Turn', 'Ready Phase', 'Troublemaker Phase', 'Main Phase', 'Score Phase', 'End Phase', 'Play Card', 'Click Card', 'Activate Effect', 'Leave Play', 'Draw', 'gainAT', 'loseAT', 'gainPoints', 'losePoints'])
 preEvent = Enum('preEvent', ['Play Card', 'Click Card', 'Activate Effect', 'Leave Play', 'Draw', 'gainAT', 'loseAT', 'gainPoints', 'losePoints'])

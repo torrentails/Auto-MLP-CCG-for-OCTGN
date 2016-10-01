@@ -11,34 +11,11 @@ def onGameStartSetup():
     setGlobalVariable('firstPlayer', 'None')
     setGlobalVariable('isSetup', 'False')
     me.setGlobalVariable('deckLoaded', 'False')
-    # iterGlobals(globals(), "")
-    
-# def iterGlobals(gd, ws):
-    # for k in gd.iterkeys():
-        # if type(gd[k]) == dict:
-            # whisper(str(k)+": {")
-            # iterGlobals(gd[k], ws+"  ")
-        # elif type(gd[k]) == list:
-            # whisper(str(k)+": [")
-            # iterGlobalsList(gd[k], ws+"  ")
-        # else: whisper("{}{}: {},".format(ws, k, gd[k]))
-    # whisper("},")
-        
-# def iterGlobalsList(gd, ws):
-    # for i in range(len(gd)):
-        # if type(gd[i]) == dict:
-            # whisper("{")
-            # iterGlobals(gd[i], ws+"  ")
-        # elif type(gd[i]) == list:
-            # whisper("[")
-            # iterGlobalsList(gd[i], ws+"  ")
-        # else: whisper("{}{},".format(ws, gd[i]))
-    # whisper("],")
     
 def onDeckLoadSetup(player, groups):
     mute()
     update()
-    gs.disableSync()
+    g.disableSync()
     cardList = []
     if not table.isTwoSided():
         notifyAll("Table not set to be 2-sided; please quit the game and ensure that 2-sided option in the lobby is enabled.", errorColor)
@@ -57,8 +34,7 @@ def onDeckLoadSetup(player, groups):
             whisper("waiting for another player to join.")
     # initializeCardDefaults(cardList) #Read and parse each card's data
     me.counters['Points'].value = 0
-    if devMode: me.counters['AT'].value = 30
-    else: me.counters['AT'].value = 0
+    me.counters['AT'].value = 0 + (devMode*50)
     setupDeck(cardList)
     
     me.setGlobalVariable('deckLoaded', 'True')
@@ -78,8 +54,8 @@ def onDeckLoadSetup(player, groups):
             notifyAll("Both players rolled a {}. Rolling again", queryColor)
             time.sleep(0.2)
             rolls=[rnd(1,6),rnd(1,6)]
-        p1 = rolls.index(max(rolls[0], roll[1]))
-        p2 = rolls.index(min(rolls[0], roll[1]))
+        p1 = rolls.index(max(rolls[0], rolls[1]))
+        p2 = rolls.index(min(rolls[0], rolls[1]))
         notifyAll("{} rolled a {}, {} rolled a {}. {} gets the choice.".format(players[p1], rolls[p1], players[p2], rolls[p2], players[p1]))
         remoteCall(players[p1], 'chooseFirstPlayer', [])
     else: chooseFirstPlayer()
@@ -99,8 +75,7 @@ def verifyDeck(cardList):
             # card.isFaceUp = True
             # peekList.append(card)
     for card in cardList:
-        cn = card.name[0]
-        # if card.subtitle != '': cn += ', '+card.subtitle
+        cn = card.get_name(True)
         if cardType.problem in card.type:
             noOfProblems += 1
             if keyword.StartingProblem in card.keywords: noOfStartProblems += 1
@@ -184,7 +159,10 @@ def revealStartingProblem():
     update()
     
 def chooseFirstPlayer():
-    if len(players) < 2 and devMode: setGlobalVariable('firstPlayer', str(me._id)); continueSetup(); return
+    if len(players) < 2 and devMode:
+        setGlobalVariable('firstPlayer', str(me._id))
+        continueSetup()
+        return
     choice = not confirm("Would you like to go first?")
     setGlobalVariable('firstPlayer', str(players[int(choice)]._id))
     for p in players:
@@ -218,8 +196,8 @@ def continueSetup():
             whisperBar("Waiting for opponent to choose if they want to mulligan.")
             return
     
-    gs.enableSync()
-    gs.flush()
+    g.enableSync()
+    g.flush()
     firstPlayer = Player(eval(getGlobalVariable('firstPlayer')))
     setGlobalVariable('turnPlayer', str(firstPlayer._id))
     remoteCall(firstPlayer, 'startGame', [])

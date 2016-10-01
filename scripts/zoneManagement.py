@@ -3,6 +3,9 @@
 #Define the standard card width and height for convenience
 cardWidth = 84
 cardHeight = 117
+cardGap = int(cardWidth/12)
+seperationFactor = 10.0
+minSeperation = 20
 cardSep = cardWidth+int(cardWidth/6)*0
 
 #Set up the zone boundaries
@@ -208,6 +211,31 @@ def organizeCardsInZone(loc, typ, lst):
     for i in range(len(lst)):
         card = lst[i]
         card.moveToTable(positions[i][0],positions[i][1])
+
+# New location formulas
+def get_location_list(cards, offset, startNoGap=4):
+	for i in range(cards):
+		i = i+1
+		a,b = get_factor(i, startNoGap)
+		p = (a+(a%2))/2
+		l = []
+		for n in range(i):
+			l.append(n*b+offset-p)
+		return l
+def get_factor(i, startNoGap=4):
+	if i < startNoGap:
+		w = i*cardWidth+(i-1)*cardGap
+		x = cardWidth+cardGap
+	elif i == startNoGap:
+		a,_ = get_factor(i-1)
+		w = int(round(a+cardWidth/2.0))
+		x = cardWidth-cardGap
+	else:
+		a,b = get_factor(i-1)
+		w = int(round(a+b/2.0))
+		x = max(int(round((w/i)*(1-(i-startNoGap)/seperationFactor))),minSeperation)
+	return w,x
+# End new location formulas
         
 def repositionCard(card, loc):
     typ = Type(card)

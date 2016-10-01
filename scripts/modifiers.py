@@ -41,6 +41,9 @@ class Modifier():
         self._enabled_ = True
         modifier_list.append(self)
         return(self)
+        
+    def __del__(self):
+        if self.cleanup: self.cleanup(self)
     
     # Read only properties
     card_owner = property(lambda self: self._card_owner_)
@@ -61,7 +64,7 @@ class Modifier():
                 return l
             raise ValueError("Inappropriate value found while forming apply list: {} {}".format(str(val), str(type(val))))
         for item in self.applies_to:
-            if type(item) == type(self.apply):
+            if type(item) == type(lambda x:x):
                 lst+=[i for i in fetch_val(item()) if i not in lst]
             else:
                 lst+=[i for i in fetch_val(val) if i not in lst]
@@ -75,19 +78,19 @@ class Modifier():
     # Writeable properties
     def get_condition(self): return self._condition_
     def set_condition(self, func):
-        assert type(func) == type(self.apply), "{} must be a function".format(str(func))
+        assert type(func) == type(lambda x:x), "{} must be a function".format(str(func))
         self._condition_ = types.MethodType(func, self)
     condition = parameter(get_condition, set_condition)
     
     def get_action(self): return self._action_
     def set_action(self, func):
-        assert type(func) == type(self.apply), "{} must be a function".format(str(func))
+        assert type(func) == type(lambda x:x), "{} must be a function".format(str(func))
         self._action_ = types.MethodType(func, self)
     action = parameter(get_action, set_action)
     
     def get_cleanup(self): return self._cleanup_
     def set_cleanup(self, func):
-        assert type(func) == type(self.apply), "{} must be a function".format(str(func))
+        assert type(func) == type(lambda x:x), "{} must be a function".format(str(func))
         self._action_ = types.MethodType(func, self)
     cleanup = parameter(get_action, set_action)
     
