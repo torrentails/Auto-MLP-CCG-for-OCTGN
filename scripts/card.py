@@ -1,499 +1,338 @@
 import re
 
-Card_Base = Card
+_card_base = Card
+_card_list = {}
 
-def Card(id):
-    try:
-        return g.card_dict[id]
-    except KeyError:
-        return _Card(id)
+CARDTYPE = _Enum('CARDTYPE', ('CHARACTER', 'MANECHARACTER', 'FRIEND', 'EVENT',
+                              'RESOURCE', 'TROUBLEMAKER', 'PROBLEM'))
 
-class _Card(object):
-    def __init__(self, id):
-        self._id = id
-        self._side_ = [{},{}]
-        c = Card_Base(id)
-        # Front Side
-        self._side_[0]['_name_'] = [c.Name]
-        self._side_[0]['_title_'] = [c.Title]
-        self._side_[0]['_subtitle_'] = [c.Subtitle]
-        self._side_[0]['_traits_'] = parseTraits(c.Traits)
-        self._side_[0]['_colors_'] = parseColors(c.Colors)
-        self._side_[0]['_power_'] = intOrZero(c.Power)
-        self._side_[0]['_keywords_'] = parseKeywords(c, c.Keywords)
-        self._side_[0]['_text_'] = c.Text
-        # Back Side
-        if c.Type == "Mane Character":
-            altf = c.alternateProperty
-            alt = "Mane Character Boosted"
-            self._side_[1]['_name_'] = [altf(alt,'Name')]
-            self._side_[1]['_title_'] = [altf(alt,'Title')]
-            self._side_[1]['_subtitle_'] = [altf(alt,'Subtitle')]
-            self._side_[1]['_traits_'] = parseTraits(altf(alt,'Traits'))
-            self._side_[1]['_colors_'] = parseColors(altf(alt,'Colors'))
-            self._side_[1]['_power_'] = intOrZero(altf(alt,'Power'))
-            self._side_[1]['_keywords_'] = parseKeywords(c, altf(alt,'Keywords'))
-            self._side_[1]['_text_'] = altf(alt,'Text')
-        # Common info
-        self._type_ = cardType[c.Type.replace(' ','')]
-        self._cost_ = intOrNone(c.Cost)
-        self._play_requirements_ = parseRequirements(c.PlayRequirements)
-        self._bonus_points_ = intOrNone(c.BonusPoints)
-        self._your_requirements_ = parseRequirements(c.YourRequirements)
-        self._opponents_requirements_ = parseRequirements(c.OpponentsRequirements)
-        self._number_ = c.Number.replace(' ','')
-        self._rarity_ = rarity[c.Rarity.replace(' ','')]
-        
-        self._effect_ = load_effect_class(c.EffectClass)
-        for effect in self._effect_: effect.printed = True
-        
-        # Setup a few other things
-        # self._applied_modifiers_ = []
-        self._modifiers_ = []
-        self._location_ = location.deck
-        self._turn_entered_area_ = g.turn_count_
-        
-        # Load the instance into the gamestate manager
-        g.new_card(self)
-    
-    # def __getattr__(self, a):
-        # # Will attempt to call the associated function then check the effect class, and finally check the base card class.
-        # try:
-            # return getattr(self, '_'+a.lower)()
-        # except AttributeError:
-            # # try:
-                # # return getattr(self._effect_class_, a)
-            # # except AttributeError:
-            # return getattr(Card_Base(self._id), a)
-    
-    # def __setattr__(self, a, v):
-        # # if initialising, write the attribute, else check if it already exists and write it if so, if not, check for the underscore method and use that, finally just write the attribute as is
-        # # if not self._initiated:
-            # # super(_Card, self).__setattr__(a, v)
-        # # else:
-        # try:
-            # getattr(self, a)
-        # except AttributeError:
-            # try:
-                # getattr(self, '_'+a)(v)
-            # except AttributeError:
-                # # whisper("adding new attribute to {}".format(self._side_[0]['_name_'][0]))
-                # super(_Card, self).__setattr__(a, v)
-            # except TypeError:
-                # raise StaticAttributeError("Can not change static attribute: {}".format(a))
-        # else:
-            # super(_Card, self).__setattr__(a, v)
-            
-    turn_entered_area = property(lambda self: self._turn_entered_zone_)
+TRAIT = _Enum('TRAIT', ('EARTHPONY', 'UNICORN', 'PEGASUS', 'ALICORN', 'ALLY',
+                        'BREEZIE', 'BUFFALO', 'CHANGELING', 'CRITTER',
+                        'CRYSTAL', 'DONKEY', 'DRACONEQUUS', 'DRAGON', 'GRIFFON',
+                        'ZEBRA', 'AHUIZOTL', 'COW', 'CHAOTIC', 'ELDER', 'FOAL',
+                        'MINOTAUR', 'PERFORMER', 'ROCK', 'ROYALTY',
+                        'SEASERPENT', 'TREE', 'ACCESSORY', 'ARMOR', 'ARTIFACT',
+                        'ASSET', 'CONDITION', 'LOCATION', 'REPORT', 'MAILBOX',
+                        'UNIQUE', 'GOTCHA', 'SHOWDOWN', 'EPIC'))
 
-    def get_location(self):
-        return self._location_
-    def set_location(self, loc, index=None, trigger=True):
-        mute()
-        oldLoc = self.location
-        card = Card_Base(self._id)
-        if oldLoc == loc:
-            if index:
-                if self.in_play(): card.setIndex(index)
-                else: card.moveTo(card.group, index)
-            return
-        g = getGroupFromLocation(loc)
-        if g == table:
-            card.moveToTable(0, 0)
-            if index: card.setIndex(index)
-        else:
-            if index: card.moveTo(g, index)
-            else: card.moveTo(g)
-        self._location_ = loc
-    location = property(get_location, set_location)
-        
-    def get_boosted(self):
-        Card_Base(self._id).alternate == 'Mane Character Boosted'
-    def set_boosted(self, val, force=False, trigger=True):
-        card = Card_Base(self._id)
-        if val == True:
-            card.alternate = 'Mane Character Boosted'
-        elif val == False:
-            card.alternate = ''
-    boosted = property(get_boosted, set_boosted)
+COLOR = _Enum('COLOR', ('BLUE', 'ORANGE', 'PINK', 'PURPLE', 'WHITE', 'YELLOW',
+                        'COLORLESS', 'WILD', 'NONBLUE', 'NONORANGE', 'NONPINK',
+                        'NONPURPLE', 'NONWHITE', 'NONYELLOW'))
 
-    def get_faceup(self):
-        if cardType.maneCharacter in self.type: return True
-        return Card_Base(self._id).isFaceUp
-    def set_faceup(self, val, force=False, trigger=True):
-        if cardType.maneCharacter in self.type:
-            self.set_boosted(val, force, trigger)
-        # TODO: move face up/face down code here
-        elif val == True:
-            self.flipFaceup(force, trigger)
-        elif val == False:
-            self.flipFacedown(force, trigger)
-    faceup = property(get_faceup, set_faceup)
-    
-    def get_exhausted(self):
-        tpeList = self.type
-        if cardType.resource in tpeList or cardType.troublemaker in typList or self.is_character():
-            if self.is_in_play():
-                return card.orientation & Rot90 == Rot90
-        return False
-    def exhaust(self, val, force=False, trigger=True):
-        mute()
-        if val == True:
-            if (force and self.ready) or self.can_exhaust():
-                canceled = False
-                if trigger: canceled = fire_event(preEvent.exhaust, card=self):
-                if force or not canceled:
-                    Card_Base(self._id).orientation = Rot90
-                    if trigger: fireEvent(event.exhaust, card=self)
-        elif val == False:
-            if (force and self.exhausted) or self.can_ready():
-                canceled = False
-                if trigger: canceled = fire_event(preEvent.ready, card=self):
-                if force or not canceled:
-                    Card_Base(self._id).orientation = Rot0
-                    if trigger: fireEvent(event.ready)
-    def ready(self, val, force=False, trigger=True):
-        self.exhaust(not val, force, trigger)
-    exhausted = property(get_exhausted, exhaust)
-            
-    def can_exhaust(self):
-        return self._apply_modifiers(modifier.exhaust, self.ready)
-            
-    def can_ready(self):
-        return self._apply_modifiers(modifier.ready, self.exhausted)
-    
-    # Property values of the card
-    def get_name(self, printed=False):
-        if printed: return self._side_[self.boosted]['_name_']
-        return self._apply_modifiers(modifier.name, self._side_[self.boosted]['_name_'])
-    name = property(get_name)
-    def get_title(self, printed=False):
-        if printed: return self._side_[self.boosted]['_title_']
-        return self._apply_modifiers(modifier.title, self._side_[self.boosted]['_title_'])
-    title = property(get_title)
-    def get_subtitle(self, printed=False):
-        if printed: return self._side_[self.boosted]['_subtitle_']
-        return self._apply_modifiers(modifier.subtitle, self._side_[self.boosted]['_subtitle_'])
-    subtitle = property(get_subtitle)
-    def get_traits(self, printed=False):
-        if printed: return self._side_[self.boosted]['_traits_']
-        return self._apply_modifiers(modifier.traits, self._side_[self.boosted]['_traits_'])
-    traits = property(get_traits)
-    def get_colors(self, printed=False):
-        if printed: return self._side_[self.boosted]['_colors_']
-        return self._apply_modifiers(modifier.colors, self._side_[self.boosted]['_colors_'])
-    colors = property(get_colors)
-    def get_power(self, printed=False):
-        if printed: return self._side_[self.boosted]['_name_']
-        return self._apply_modifiers(modifier.power, self._side_[self.boosted]['_power_'])
-    power = property(get_power)
-    def get_keywords(self, printed=False):
-        if printed: return self._side_[self.boosted]['_keywords_']
-        return self._apply_modifiers(modifier.keywords, self._side_[self.boosted]['_keywords_'])
-    keywords = property(get_keywords)
-    def get_text(self, printed=False):
-        if printed: return self._side_[self.boosted]['_text_']
-        return self._apply_modifiers(modifier.text, self._side_[self.boosted]['_text_'])
-    text = property(get_text)
-    def get_type(self, printed=False):
-        if printed: return self._type_
-        return self._apply_modifiers(modifier.type, self._type_)
-    type = property(get_type)
-    def get_cost(self, printed=False):
-        if printed: return self._cost_
-        return self._apply_modifiers(modifier.cost, self._cost_)
-    cost = property(get_cost)
-    def get_play_requirements(self, printed=False):
-        if printed: return self._play_requirements_
-        return self._apply_modifiers(modifier.play_requirements, self._play_requirements_)
-    play_requirements = property(get_play_requirements)
-    def get_bonus_points(self, printed=False):
-        if printed: return self._bonus_points_
-        return self._apply_modifiers(modifier.bonus_points, self._bonus_points_)
-    bonus_points = property(get_bonus_points)
-    def get_your_requirements(self, printed=False):
-        if printed: return self._your_requirements_
-        return self._apply_modifiers(modifier.your_requirements, self._your_requirements_)
-    your_requirements = property(get_your_requirements)
-    def get_opponents_requirements(self, printed=False):
-        if printed: return self._opponents_requirements_
-        return self._apply_modifiers(modifier.opponents_requirements, self._opponents_requirements_)
-    opponents_requirements = property(get_opponents_requirements)
-    def get_number(self, printed=False):
-        if printed: return self._number_
-        return self._apply_modifiers(modifier.number, self._number_)
-    number = property(get_number)
-    def get_rarity(self, printed=False):
-        if printed: return self._rarity_
-        return self._apply_modifiers(modifier.rarity, self._rarity_)
-    rarity = property(get_rarity)
-    def get_effects(self, printed=False:
-        if printed: return self._effect_
-        return self._apply_modifiers(modifier.effect, self._effect_)
-    effects = property(get_effects)
-    
-    # Effect functions of the card
-    # TODO: match these up to their effect class counterparts
-    def gameload(self):
-        for obj in self._effect_class_:
-            obj.gameload(self)
-    def activate_list(self):
-        lst = []
-        for obj in self._effect_class_:
-            item_list = obj.activate_list(self)
-            if len(item) >= 1: lst.append(tupple([obj]+item_list))
-        kw_dict = self.keywords
-        for obj in kw_dict:
-            item_list = kw_dict[obj].activate_list(self)
-            if len(item) >= 1: lst.append(tupple([kw_dict[obj]]+item_list))
-        return lst
-    def activate(self, obj, index = 1):
-        return obj.activate(self, index)
-    def can_play(self):
-        can = True
-        for obj in self._effect_class_:
-            can &= obj.can_play(self)
-        kw_dict = self.keywords
-        for obj in kw_dict:
-            can &= kw_dict[obj].can_play(self)
-        return can
-    def enters_play(self):
-        for obj in self._effect_class_:
-            obj.enters_play(self)
-    def leaves_play(self):
-        for obj in self._effect_class_:
-            obj.leaves_play(self)
-    def moved(self):
-        for obj in self._effect_class_:
-            obj.moved(self)
-    def face_up(self):
-        for obj in self._effect_class_:
-            obj.face_up(self)
-    def face_down(self):
-        for obj in self._effect_class_:
-            obj.face_down(self)
-    def confronted(self):
-        for obj in self._effect_class_:
-            obj.confronted(self)
-    def solved(self):
-        for obj in self._effect_class_:
-            obj.solved(self)
-    def replaced(self):
-        for obj in self._effect_class_:
-            obj.replaced(self)
-            
-    # Modifiers
-    def new_modifier(self, modifier_type, effect = None):
-        mod = Modifier(self, modifier_type, effect)
-        self._modifiers_.append(mod)
-        # self._applied_modifiers_.append(mod)
-        return mod
-        
-    def remove_modifier(self, mod, issued_by_mod=False):
-        if issued_by_mod:
-            self._modifiers_.remove(mod)
-        else:
-            mod.remove()
-        
-    def _apply_modifiers(self, modifier_type, arg):
-        return apply_modifiers(self, modifier_type, arg)
-        
-    # Events
-    def new_event(self, event_type, effect = None):
-        evt = new_event(event_type, effect)
-        evt.bind_to_card(self)
-        return evt
-    
-    # Directly accessible methods
-    def is_character(self):
-        type_set = self.type
-        return cardType.friend in type_set or cardType.maneCharacter in type_set
-    
-    def is_in_play(self):
-        loc = self.location
-        return loc == location.home or loc == location.myProblem or loc == location.oppProblem
-    in_play = property(is_in_play)
-        
-    def entered_play_this_turn(self):
-        return self.in_play and g.turn_count == self.turn_entered_area
-    
-    # def ready(self, force=False, trigger=True):
-        # mute()
-        # if (force and self.exhausted) or self.canReady:
-            # canceled = False
-            # if trigger: canceled = fireEvent(preEvent.ready, card=self):
-            # if force or not canceled:
-                # Card_Base(self._id).orientation = Rot0
-                # if trigger: fireEvent(event.ready, card=self)
-    
-    # def exhaust(self, force=False, trigger=True):
-        # mute()
-        # if (force and self.isReady) or self.canExhaust:
-            # canceled = False
-            # if trigger: canceled = fireEvent(preEvent.exhaust, card=self):
-            # if force or not canceled:
-                # Card_Base(self._id).orientation = Rot90
-                # if trigger: fireEvent(event.exhaust, card=self)
+#TODO write code to dynamically update keyword list
+KEYWORD = _Enum('KEYWORD', ('HOMELIMIT', 'CARETAKER', 'INSPIRED', 'PRISMATIC',
+                            'PUMPED', 'RANDOM', 'STARTINGPROBLEM', 'STUBBORN',
+                            'STUDIOUS', 'SUPPORTIVE', 'SWIFT', 'TEAMWORK',
+                            'VILLAIN'))
 
-class Effect_Base(object):
-    def __init__(self, card):
-        self._id = uuid4()
-        self.printed = False
-        self.modifier = set()
-        self._is_keyword = False
-    is_keyword = property(lambda self: self._is_keyword)
-    def gameload(self, card): pass
-    def activate_list(self, card): return []
-    def activate(self, card, index = 1): return ''
-    def can_play(self, card): return True
-    def new_instance(self, card): pass
-    def as_enters_play(self, card): pass
-    def enters_play(self, card): pass
-    def leaves_play(self, card): pass
-    def moved(self, card): pass
-    def face_up(self, card): pass
-    def face_down(self, card): pass
-    def faceoff(self, card): pass
-    def flipped(self, card): pass
-    def confronted(self, card): pass
-    def solved(self, card): pass
-    def replaced(self, card): pass
-    def __eq__(self, other):
-        if other is self: return True
-        if isinstance(other, self.__class__):
-            return self.__dict__ == other.__dict__
-        return NotImplemented
-    def __ne__(self, other):
-        if other is self: return False
-        if isinstance(other, self.__class__):
-            return not self == other
-        return NotImplemented
-    def __hash__(self): return hash(tuple(sorted(self.__dict__.items())))
-    
-class Keyword_Base(Effect_Base):
-    def __init__(self, card, value = None):
-        Effect_Base.__init__(self, card)
-        self.value = value
-        self._is_keyword = True
-        
-def fetch_keyword_object(kw, id, val=None):
-    Card = Card_Base
-    card = table.create(id, 0, 0)
-    class_text = card.EffectClass
-    card.delete()
-    whiteSpace = -1
-    try:
-        while class_text[0] == ' ':
-            whiteSpace += 1
-            class_text = class_text[1:]
-        class_text = parse_string(class_text, whiteSpace)
-        exec(class_text)
-        exec('obj = KW_'+kw.replace(' ','_')+'('+val+')')
-        return obj
-    except (IndexError, NameError):
-        raise NoEffectDeffined('Unable to load custom keyword effect: '+kw)
-        
-def load_effect_class(class_text):
-    whiteSpace = -1
-    try:
-        while class_text[0] == ' ':
-            whiteSpace += 1
-            class_text = class_text[1:]
-        class_text = parse_string(class_text, whiteSpace)
-        exec(class_text)
-        return set((effect(),))
-    except IndexError:
-        return set()
+RARITY = _Enum('RARITY', ('COMMON', 'UNCOMMON', 'RARE', 'SUPERRARE',
+                          'ULTRARARE', 'ROYALRARE', 'FIXED', 'PROMO'))
 
-def parse_string(str, ws):
-    if ws == -1: ws = 0
-    l = re.split("(/;|/`|;;|`|;,|;\.|; )",str)
-    for i in range(len(l)):
-        if l[i] == r'/;':    l[i] = ';'
-        elif l[i] == r'/`':  l[i] = '`'
-        elif l[i] == r';;':  l[i] = '"'
-        elif l[i] == r'`':   l[i] = "'"
-        elif l[i] == r';,':  l[i] = '<'
-        elif l[i] == r';.':  l[i] = '>'
-        elif l[i] == r'; ':
-            l[i] = "\n"
+def parse_values(string, enum, as_dict=False):
+    """ Accepts a string and parses through it to retrieve comma seperated
+        enumeration values
+
+        :param string:  String in the form of `value [num], value [num]...`
+        :param enum:    Values will be extracted and mapped the supplied enum
+        :param as_dict: If `True` the result will be a dictionary with the keys
+        being the enum vlues and the values being associated numbers or `None`
+        if not present, else the function will return a list of enum values
+
+        :return list:   Will return either a list or a dict, depending on as_dict
+    """
+    if string == '':
+        return {} if as_dict else []
+    values = [val.strip() for val in string.split(',')]
+    if as_dict:
+        dct = {}
+        for val in values:
             try:
-                l[i+1] = l[i+1][ws:]
-            except IndexError: pass
-    return "".join(l)
+                v = int(val[0])
+                k = enum[val[2:].replace(' ', '').replace('-', '')]
+                dct[k] = v
+            except ValueError:
+                try:
+                    v = int(val[len(val)-1])
+                    k = enum[val[:len(val)-2].replace(' ', '').replace('-', '')]
+                    dct[k] = v
+                except ValueError:
+                    dct[enum[val]] = None
+        return dct
+    else:
+        return [enum[val.replace(' ', '').replace('-', '')] for val in values]
 
-def intOrZero(n, default=0):
-    try: return int(n)
-    except ValueError: return default
-    
-def parseTraits(string):
-    l = parseList(string)
-    for i in range(len(l)):
-        l[i] = trait[l[i]]
-    return set(l)
-        
-def parseColors(string):
-    l = parseList(string)
-    for i in range(len(l)):
-        l[i] = color[l[i]]
-    return set(l)
-
-def parseRequirements(string):
-    l = parseDict(string)
-    d = {}
-    for i in l:
-        d[color[i[0]]] = int(i[1])
-    return d
-
-def parseKeywords(card, string):
-    kw = {}
-    if string == '': return kw
-    s = []
-    l = re.split("(,|, )",string)
-    for i in range(len(l)):
-        if l[i] != r', ' and l[i] != r',': s.append(l[i])
-    for v in s:
-        n = ''
-        while v.endswith(('0','1','2','3','4','5','6','7','8','9')):
-            n = v[-1] + n
-            v = v[:-1]
-        if v.endswith((' ',)): v = v[:-1]
-        obj = None
-        val = intOrZero(n, None)
+class Card(object):
+    def __new__(cls, id):
         try:
-            exec('obj = KW_'+v.replace(' ','_')+'('+val+')')
-        except NameError:
-            class_text = card.EffectClass
-            whiteSpace = -1
-            try:
-                while class_text[0] == ' ':
-                    whiteSpace += 1
-                    class_text = class_text[1:]
-                class_text = parse_string(class_text, whiteSpace)
-                exec(class_text)
-                exec('obj = KW_'+v.replace(' ','_')+'('+val+')')
-            except (IndexError, NameError):
-                raise NoEffectDeffined('Unable to load custom keyword effect: '+v)
-        kw[keyword[v.replace(' ','')]] = obj
-    return kw
-            
-def parseList(string):
-    lst = []
-    if string == '': return lst
-    l = re.split("(,|, )",string)
-    for i in range(len(l)):
-        if l[i] != r', ' and l[i] != r',': lst.append(l[i].replace(' ',''))
-    return lst
+            return _card_list[id]
+        except KeyError:
+            return super(Card, cls).__new__(cls, id)
 
-def parseDict(string):
-    lst = []
-    if string == '': return lst
-    s = []
-    l = [x for x in re.split(",|, | ",string) if x != '']
-    for i in range(len(l)):
-        if i < len(l):
-            if l[i] != r', ' and l[i] != r',' and l[i] != r' ': s.append(l[i])
-    for n in range(len(l)):
-        if n%2 != 0:
-            lst.append([l[n].replace(' ',''),l[n-1]])
-    return lst
+    def __init__(self, id):
+        if id in _card_list:
+            return
+
+        c = _card_base(id)
+        self._base = c
+        # self.c is just temporary for testing; DO NOT USE IN CODE
+        self.c = c
+        self.__side = [{},{}]
+
+        log("Creating card {}".format(self), LOGLEVEL.DEBUG)
+
+        self.__side[0]['name'] = [c.Name]
+        self.__side[0]['title'] = [c.Title]
+        self.__side[0]['subtitle'] = [c.Subtitle]
+        log("Parsing traits", LOGLEVEL.VERBOSE)
+        self.__side[0]['traits'] = parse_values(c.Traits, TRAIT)
+        log("Parsing colors", LOGLEVEL.VERBOSE)
+        self.__side[0]['colors'] = parse_values(c.Colors, COLOR)
+        log("Parsing power", LOGLEVEL.VERBOSE)
+        try:
+            self.__side[0]['power'] = int(c.Power)
+        except ValueError:
+            self.__side[0]['power'] = None # May need to be 0
+        log("Parsing keywords", LOGLEVEL.VERBOSE)
+        self.__side[0]['keywords'] = parse_values(c.Keywords, KEYWORD, as_dict=True)
+
+        if c.Type == "Mane Character":
+            log("Creating boosed side", LOGLEVEL.VERBOSE)
+            altp = lambda val: c.alternateProperty(
+                "Mane Character Boosted", val)
+            self.__side[1]['name'] = [altp('Name')]
+            self.__side[1]['title'] = [altp('Title')]
+            self.__side[1]['subtitle'] = [altp('Subtitle')]
+            log("Parsing boosted traits", LOGLEVEL.VERBOSE)
+            self.__side[1]['traits'] = parse_values(altp('Traits'), TRAIT)
+            log("Parsing boosted colors", LOGLEVEL.VERBOSE)
+            self.__side[1]['colors'] = parse_values(altp('Colors'), COLOR)
+            log("Parsing boosted power", LOGLEVEL.VERBOSE)
+            try:
+                self.__side[1]['power'] = int(altp('Power'))
+            except ValueError:
+                self.__side[1]['power'] = None # May need to be 0
+            log("Parsing boosted keywords", LOGLEVEL.VERBOSE)
+            self.__side[1]['keywords'] = parse_values(altp('Keywords'), KEYWORD,
+                                             as_dict=True)
+
+        log("Parsing cardtrype", LOGLEVEL.VERBOSE)
+        self._base_type = [CARDTYPE[c.Type.replace(' ','')]]
+        log("Parsing cost", LOGLEVEL.VERBOSE)
+        try:
+            self.__cost = int(c.Cost)
+        except ValueError:
+            self.__cost = None # May need to be 0
+        log("Parsing play requirements", LOGLEVEL.VERBOSE)
+        self.__play_requirements = parse_values(c.PlayRequirements, COLOR,
+                                         as_dict=True)
+        log("Parsing bonus points", LOGLEVEL.VERBOSE)
+        try:
+            self.__bonus_points = int(c.BonusPoints)
+        except ValueError:
+            self.__bonus_points = None
+        log("Parsing your confront requirements", LOGLEVEL.VERBOSE)
+        self.__your_requirements = parse_values(c.YourRequirements,
+                                       COLOR, as_dict=True)
+        log("Parsing opponents confront requirements", LOGLEVEL.VERBOSE)
+        self.__opponents_requirements = parse_values(c.OpponentsRequirements,
+                                            COLOR, as_dict=True)
+        # self.__number = c.Number.replace(' ','')
+        rarity_list = {'C':RARITY.COMMON,
+            'U':RARITY.UNCOMMON,
+            'R':RARITY.RARE,
+            'SR':RARITY.SUPERRARE,
+            'UR':RARITY.ULTRARARE,
+            'RR':RARITY.ROYALRARE,
+            'F':RARITY.FIXED,
+            'P':RARITY.PROMO}
+        log("Parsing raity", LOGLEVEL.VERBOSE)
+        self.rarity = rarity_list[c.Rarity]
+        
+        self.__effects = []
+        
+        self.id = id
+        self.uuid = c.model
+        self.owner = me
+        self.controller = me
+        # TODO: This can be better
+        # self.__location = LOCATION.DECK
+        # LOCATION.DECK.card_list.append(self)
+        self.set_location(LOCATION.MYPROBLEM)
+        # self.in_play = False
+        # self.turn_entered_location = g.turn_count
+         
+        _card_list[id] = self
+
+    # def __getattr__(self, attr):
+    #     log("Getting base card attribute of {}".format(self))
+    #     return self._base.__getattr__(attr)
+
+    # def __str__(self):
+    #     return '{#' + str(self.id) + '}'
+
+    def __str__(self):
+        return "{}".format(self._base)
+
+    def __apply_modifiers(self, key, modifier=None, value=None):
+        log("Fetching modifiers for {} on {}".format(key, self), LOGLEVEL.DEBUG)
+        if modifier is None:
+            modifier = MODIFIER[key.replace('_', '').upper()]
+        if value is None:
+            value = self.__side[self.is_boosted()][key]
+        val = _apply_modifiers(self, modifier, {key:value})
+        return val[key]
+
+    @property
+    def name(self):
+        return self.__apply_modifiers('name')
+
+    @property
+    def title(self):
+        return self.__apply_modifiers('title')
+
+    @property
+    def subtitle(self):
+        return self.__apply_modifiers('subtitle')
+
+    @property
+    def traits(self):
+        return self.__apply_modifiers('traits', MODIFIER.TRAIT)
+
+    @property
+    def colors(self):
+        return self.__apply_modifiers('colors', MODIFIER.COLOR)
+
+    @property
+    def power(self):
+        return self.__apply_modifiers('power')
+
+    # TODO: keywords
+
+    @property
+    def type(self):
+        return self.__apply_modifiers('type', value=self._base_type)
+
+    @property
+    def cost(self):
+        return self.__apply_modifiers('cost', value=self.__cost)
+
+    @property
+    def play_requirements(self):
+        return self.__apply_modifiers('play_requirements',
+            value=self.__play_requirements)
+
+    @property
+    def bonus_points(self):
+        return self.__apply_modifiers('bonus_points',
+            value=self.__bonus_points)
+
+    @property
+    def your_requirements(self):
+        return self.__apply_modifiers('your_requirements',
+            value=self.__your_requirements)
+
+    @property
+    def opponents_requirements(self):
+        return self.__apply_modifiers('opponents_requirements',
+            value=self.__opponents_requirements)
+
+    # TODO: effects
+
+    @property
+    def _id(self):
+        return self.id
+
+    # @property
+    # def controller(self):
+    #     return self._base.controller
+    # @controller.setter
+    # def controller(self, player):
+    #     self._base.controller = player
+    
+    # @property
+    # def owner(self):
+    #     return self._base.owner
+    # @owner.setter
+    # def owner(self, player):
+    #     pass
+    #     # self._base.owner = player
+
+    @property
+    def location(self):
+        return self.__location
+
+    @property
+    def faceup(self):
+        return self._base.isFaceUp
+
+    @property
+    def facedown(self):
+        return not self.faceup
+
+    def is_boosted(self):
+        # TODO: Write this
+        return False
+
+    def is_character(self):
+        _type = self.type
+        return CARDTYPE.MANECHARACTER in _type or CARDTYPE.FRIEND in _type
+
+    def attached_to(self):
+        # TODO: Write this
+        return None
+    
+    def set_location(self, location):
+        try:
+            old_loc = self.location
+            log("Setting {} location: from {} to {}".format(self, old_loc,
+                location), LOGLEVEL.DEBUG)
+            old_loc._remove_cards(self)
+
+        except AttributeError:
+            log("Inititlizing {} loaction: {}".format(self, location),
+                LOGLEVEL.DEBUG)
+
+        self.__location = location
+        location._add_cards(self)
+    
+    def _set_table_position(self, x=0, y=0, force_facedown=False):
+        # TODO: Check that the card in on the table
+        self._base.moveToTable(x, y, force_facedown)
+
+    # _id     Returns the unique identity value of the card   
+    # # alternate   The card's alternate form.  
+    # # alternates  a LIST of all alternate forms of the card, identified by their 'type' string.   
+    # _anchor  Anchors the card to the table, preventing players from manually moving it   
+    # _controller  the player OBJECT of the card's current controller.     
+    # filter  the current filter color as a string in #HEX color format.  
+    # # group   Returns the group OBJECT that the card is currently located in.     
+    # # index   the current index (z-value) of the card in the group it is in.  
+    # # isFaceUp    Returns or Sets the card's visibility status.   
+    # # height  Returns the card's height as defined by the game.   
+    # highlight   the current highlight color as a string in #HEX color format.   
+    # _markers     Returns a DICTIONARY of all markers which can be edited via python.     
+    # # model   Returns the GUID of the card    
+    # # name    Returns the chat-hoverable name of the card     
+    # _orientation     Returns or Sets the current rotation of a card in 90 degree intervals.  
+    # _owner   Returns the player OBJECT of the card's owner.  
+    # _position    Returns the x,y coordinates of the card.    
+    # # properties  Returns dictionary of all the card's custom properties and their values     
+    # # set     The name of the expansion set that the card belongs to  
+    # # setId   The GUID of the expansion set that the card belongs to  
+    # # size    Returns the name of the card's current custom size  
+    # _targetedBy  Returns the player OBJECT who is targeting the card.    
+    # # width
+    # # alternateProperty()     Returns a property value from an alternate form of the card.    
+    # arrow()     Draws an arrow from the card to another card. active = False will remove the arrow.     
+    # _delete()    Eliminates the card from the game.  
+    # _isInverted()    Checks to see if the card would be inverted at the given y coordinate   
+    # _moveTo()    Moves a card to a specified group. Top of piles if index = None.    
+    # _moveToBottom()  Moves a card to the BOTTOM of a specified PILE.     
+    # _moveToTable()   Moves a card to specified coordinates on the table.     
+    # _offset()    a new coordinate tuple (x,y) slightly offset from the card's current position   
+    # _peek()  Reveals the identity of the card to the local player while keeping it face-down.    
+    # # resetProperties()   Clears all changes made to card properties, restoring their original values     
+    # select()    Adds the card to the current selection.     
+    # # sendToBack()    Sends the card behind all other cards on the TABLE ONLY     
+    # # sendToFront()   Sends the card in front of all other cards on the TABLE ONLY    
+    # target()    Targets the card, or removes target if active = False.

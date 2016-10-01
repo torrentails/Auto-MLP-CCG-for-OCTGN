@@ -1,14 +1,14 @@
 <?xml version="1.0" encoding="utf-8" ?>
 
-<game name="Auto MLP CCG"
+<game name="Test platform"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    id="a953003d-3075-4b56-8f6f-1122b7fa94bd"
+    id="ba26e2ba-6f8b-49f7-9ac0-35cbe5b26bae"
     octgnVersion="3.1.163.361"
     version="0.3.2.3"
-    scriptVersion="3.1.0.1"
+    scriptVersion="3.1.0.2"
     markersize="16"
-    tags="My Little Pony auto automatic MLP CCG"
-    description="Fully automated My Little Pony CCG for two players."
+    tags="Test platform"
+    description="For testing stuff in OCTGN"
     authors="torrentails"
     iconurl="http://www.torrentails.com/files/8114/3192/2320/MLP_CCG_Logo.png"
     setsurl=""
@@ -16,27 +16,30 @@
     usetwosidedtable="True">
 
   <scripts>
+    <!--Independant modules, see licences.txt-->
+    <script src="scripts/pytweening.py" />
+    <script src="scripts/rsonlite.py" />
     <script src="scripts/uuid.py" />
+    <!--Core files; order is important-->
+    <script src="scripts/settings.py" />
+    <script src="scripts/global_state.py" />
     <script src="scripts/utilities.py" />
-    <script src="scripts/enums.py" />
-    <script src="scripts/gamestate.py" />
-    <script src="scripts/card.py" />
-    <script src="scripts/eventsAndPPP.py" />
+    <script src="scripts/network.py" />
+    <script src="scripts/effect.py" />
+    <script src="scripts/events.py" />
     <script src="scripts/modifiers.py" />
-    <!--<script src="scripts/cardPropertyManagement.py" />-->
-    <script src="scripts/zoneManagement.py" />
-    <script src="scripts/actions.py" />
-    <script src="scripts/setup.py" />
-    <script src="scripts/turnControl.py" />
-    <script src="scripts/markers.py" />
+    <script src="scripts/player.py" />
+    <script src="scripts/location.py" />
+    <script src="scripts/card.py" />
+    <script src="scripts/testing.py" />
   </scripts>
 
   <events>
-    <event name="OnGameStart" action="onGameStartSetup" />
-    <event name="OnLoadDeck" action="onDeckLoadSetup" />
-    <event name="OnMoveCard" action="onMoveCard" />
-    <event name="OnCardClick" action="onClickCard" />
-    <event name="OnCardDoubleClick" action="onDoubleClick" />
+    <!--<event name="OnGlobalVariableChanged" action="gv_change" />-->
+    <event name="OnTableLoaded" action="_on_table_load" />
+    <event name="OnGameStarted" action="_on_game_load" />
+    <event name="OnCounterChanged" action="_adjust_counter" />
+    <event name="OnCardClicked" action="_print_pos" />
   </events>
 
   <sounds>
@@ -51,18 +54,16 @@
   <documents>
   </documents>
 
+  <gameModes>
+    <gameMode name="Harmony" shortDescription="MLP:CCG following the Harmony ban list." image="images/placeholder.png" playerCount="2" />
+    <gameMode name="Block" shortDescription="MLP:CCG using only cards from the current block and ban list." image="images/placeholder.png" playerCount="2" />
+    <gameMode name="Nightmare" shortDescription="MLP:CCG with no card restrictions or ban list." image="images/placeholder.png" playerCount="2" />
+    <gameMode name="Chaos" shortDescription="MLP:CCG following current Chaos rules." image="images/placeholder.png" playerCount="2" />
+  </gameModes>
+
   <globalvariables>
-    <globalvariable name="devMode" value="True" />
-    <globalvariable name="FirstTurn" value="True" />
-    <globalvariable name="FirstPlayer" value="None" />
-    <globalvariable name="Phase" value="None" />
-    <globalvariable name="playingCard_player" value="None" />
-    <globalvariable name="playingCard_card" value="None" />
-    <globalvariable name="playingCard_cost" value="None" />
-    <globalvariable name="isSetup" value="None" />
-    <globalvariable name="turnPlayer" value="None" />
-    <globalvariable name="PPP" value="False" />
-    <globalvariable name="hasPriority" value="None" />
+    <globalvariable name="network_lock" value="False" />
+    <globalvariable name="reply_message" value="None" />
   </globalvariables>
 
   <!--The full name of the card (title + subtitle) should be stored in the name attribute-->
@@ -104,28 +105,23 @@
 
   <table name="Table" visibility="undefined" ordered="False" width="1280" height="720" board="images/bg.png" background="images/bg.png" backgroundStyle="uniformToFill">
   
-    <cardaction menu="Activate" shortcut="SPACE" execute="activate" />
-    <groupaction menu="End phase" shortcut="tab" execute="endPhase" />
-    <groupaction menu="Declare response" shortcut="CTRL+SPACE" execute="declareResponse" />
-    <groupaction menu="Cancel playing card" shortcut="ESC" execute="cancelPlayingCard" />
-    <groupaction menu="Draw a card" shortcut="CTRL+D" execute="payToDraw" />
-    <groupaction menu="Surrender" shortcut="CTRL+SHIFT+S" execute="surrender" />
-    <cardaction menu="Rally frightened friend" shortcut="CTRL+R" execute="rally" />
+    <groupaction menu="test_function" shortcut="CTRL+SPACE" execute="_test_function" />
   </table>
 
   <player summary="Points: {#Points} / AT: {#AT} / Hand: {#Hand} / Deck: {#Deck}">
     <counter name="Points" default="0" icon="images/Points.png"  />
     <counter name="AT" default="0" icon="images/AT.png" />
+    <counter name="Blue Devotion" default="0" icon="images/color-b.png" />
+    <counter name="Orange Devotion" default="0" icon="images/color-o.png" />
+    <counter name="Pink Devotion" default="0" icon="images/color-p.png" />
+    <counter name="Purple Devotion" default="0" icon="images/color-u.png" />
+    <counter name="White Devotion" default="0" icon="images/color-w.png" />
+    <counter name="Yellow Devotion" default="0" icon="images/color-y.png" />
 
     <hand name="Hand" visibility="me" ordered="False" width="84" height="117" icon="images/placeholder.png">
-      <cardaction menu="Play Card" shortcut="SPACE" execute="tryPlayCard" />
     </hand>
 
     <group name="Deck" visibility="none" width="84" height="117" icon="images/placeholder.png">
-      <groupaction menu="Draw a card" shortcut="CTRL+D" execute="payToDraw" />
-    </group>
-
-    <group name="Problem Deck" visibility="none" width="84" height="117" icon="images/placeholder.png">
     </group>
 
     <group name="Discard Pile" visibility="all" width="84" height="117" icon="images/placeholder.png">
